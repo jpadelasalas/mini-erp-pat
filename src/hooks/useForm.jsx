@@ -24,6 +24,8 @@ const useForm = (initialValues, validate) => {
   );
 
   const handleChange = (e) => {
+    console.log(initialValues, values);
+
     const { name, value } = e.target;
     dispatch({ type: "ADD_INPUT", name, value });
   };

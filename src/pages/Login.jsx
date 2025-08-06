@@ -112,7 +112,7 @@ const Login = () => {
           !isLogin ? "grid-rows-[40%_60%]" : "grid-rows-[60%_40%]"
         } bg-gray-200 md:bg-white rounded-sm sm:rounded-lg shadow-md max-lg:h-[90%] max-md:h-auto w-3/4 lg:w-full max-w-5xl p-2 m-auto md:p-0 md:m-0 `}
       >
-        <div className={`hidden md:block order-${isLogin ? 2 : 1}`}>
+        <div className={`hidden md:block ${isLogin ? "order-2" : "order-1"}`}>
           <img
             src={BgLogin}
             className={`h-full w-full object-cover ${
@@ -122,7 +122,9 @@ const Login = () => {
             } `}
           />
         </div>
-        <div className={`p-1 sm:p-4 md:p-8 m-3 order-${isLogin ? 1 : 2}`}>
+        <div
+          className={`p-1 sm:p-4 md:p-8 m-3 ${isLogin ? "order-1" : "order-2"}`}
+        >
           {!isLogin ? (
             <LoginPage
               userDetails={userDetails}
