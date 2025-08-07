@@ -3,10 +3,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import useDebounce from "../hooks/useDebounce";
 import useForm from "../hooks/useForm";
+import Swal from "sweetalert2";
 
 const InventoryContext = createContext();
 
@@ -22,9 +24,12 @@ const validation = (vals) => {
   if (vals.quantity <= 0) {
     errors.quantity = "Quantity must be greater than 0";
   }
-  if (vals.price <= 0) {
+  if (!vals.price) {
+    errors.price = "Price is required";
+  } else if (vals.price <= 0) {
     errors.price = "Price must be greater than 0";
   }
+
   return errors;
 };
 
@@ -33,10 +38,16 @@ export const InventoryContextProvider = ({ children }) => {
   const debouncedSearch = useDebounce(search, 700);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [initialValues, setInitialValues] = useState({});
+  const [itemLists, setItemLists] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState("");
+  const rendered = useRef(false);
 
   useEffect(() => {
     const userId = JSON.parse(sessionStorage.getItem("user")).id;
     const docNum = JSON.parse(localStorage.getItem("docno"))[userId].inventory;
+    const items = JSON.parse(localStorage.getItem("Inventory")) || {};
+
     setInitialValues({
       itemNum:
         docNum.prefix + String(docNum.docnum).padStart(docNum.length, "0"),
@@ -46,22 +57,120 @@ export const InventoryContextProvider = ({ children }) => {
       quantity: 1,
       price: "",
     });
-  }, [setInitialValues]);
 
-  const { values, handleChange, isError, handleSubmit, resetForm } = useForm(
+    setItemLists(items[userId] || []);
+  }, []);
+
+  useEffect(() => {
+    if (!rendered.current) {
+      rendered.current = true;
+      return;
+    }
+
+    const userId = JSON.parse(sessionStorage.getItem("user")).id;
+    const items = JSON.parse(localStorage.getItem("Inventory")) || {};
+    items[userId] = itemLists;
+    localStorage.setItem("Inventory", JSON.stringify(items));
+  }, [itemLists]);
+
+  const { values, handleChange, isError, handleSubmit, dispatchForm } = useForm(
     initialValues,
     validation
   );
 
   const handleOpenModal = useCallback(() => {
+    const userId = JSON.parse(sessionStorage.getItem("user")).id;
+    const docNum = JSON.parse(localStorage.getItem("docno"))[userId].inventory;
+    const item = {
+      itemNum:
+        docNum.prefix + String(docNum.docnum).padStart(docNum.length, "0"),
+      name: "",
+      description: "",
+      category: "",
+      quantity: 1,
+      price: "",
+    };
+
+    setInitialValues(item);
+    setIsEditing(false);
+    setTitle("Add New Inventory");
+    dispatchForm(item);
     setIsOpenModal(true);
-    resetForm();
-  }, [resetForm]);
+  }, [dispatchForm]);
 
   const handleCloseModal = useCallback(() => {
     setIsOpenModal(false);
-    resetForm();
-  }, [resetForm]);
+    dispatchForm();
+  }, [dispatchForm]);
+
+  const onEdit = useCallback(
+    (id) => {
+      const item = itemLists.find((item) => item.itemNum === id);
+
+      setIsEditing(true);
+      setTitle("Update Item");
+      setInitialValues(item);
+      dispatchForm(item);
+      setIsOpenModal(true);
+    },
+    [itemLists, dispatchForm]
+  );
+
+  const handleAddNewInventory = (vals) => {
+    setItemLists((prev) => [
+      ...prev,
+      {
+        ...vals,
+        date_created: new Date().toLocaleDateString(),
+        updated_at: new Date().toLocaleDateString(),
+      },
+    ]);
+
+    const userId = JSON.parse(sessionStorage.getItem("user")).id;
+    const docno = JSON.parse(localStorage.getItem("docno"));
+    docno[userId].inventory.docnum += 1;
+    localStorage.setItem("docno", JSON.stringify(docno));
+    Swal.fire({
+      icon: "success",
+      title: "Added Successfully!",
+    }).then((alert) => {
+      if (alert.isConfirmed) handleCloseModal();
+    });
+  };
+
+  const handleUpdateInventory = (vals) => {
+    setItemLists((prev) =>
+      prev.map((item) =>
+        item.itemNum === vals.itemNum
+          ? { ...vals, updated_at: new Date().toLocaleDateString() }
+          : item
+      )
+    );
+    Swal.fire({
+      icon: "success",
+      title: "Updated Successfully!",
+    }).then((alert) => {
+      if (alert.isConfirmed) handleCloseModal();
+    });
+  };
+
+  const handleSubmitForm = (values) => {
+    if (isEditing) {
+      handleUpdateInventory(values);
+    } else {
+      handleAddNewInventory(values);
+    }
+  };
+
+  const handleDeleteItem = (id) => {
+    setItemLists((prev) => prev.filter((item) => item.itemNum !== id));
+    Swal.fire({
+      icon: "success",
+      title: "Deleted Successfully!",
+    }).then((alert) => {
+      if (alert.isConfirmed) handleCloseModal();
+    });
+  };
 
   useEffect(() => {
     if (debouncedSearch.trim() != "") {
@@ -74,6 +183,7 @@ export const InventoryContextProvider = ({ children }) => {
       value={{
         search,
         setSearch,
+        itemLists,
         isOpenModal,
         setIsOpenModal,
         handleOpenModal,
@@ -81,8 +191,12 @@ export const InventoryContextProvider = ({ children }) => {
         values,
         handleChange,
         isError,
+        onEdit,
         handleSubmit,
-        resetForm,
+        handleSubmitForm,
+        handleDeleteItem,
+        dispatchForm,
+        title,
       }}
     >
       {children}

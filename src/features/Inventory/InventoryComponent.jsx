@@ -2,7 +2,8 @@ import { useInventory } from "../../context/InventoryContext";
 import InventoryModal from "./InventoryModal";
 
 const InventoryComponent = () => {
-  const { search, setSearch, isOpenModal, handleOpenModal } = useInventory();
+  const { search, setSearch, itemLists, isOpenModal, handleOpenModal, onEdit } =
+    useInventory();
   return (
     <>
       <header className="grid grid-cols-1 sm:grid-cols-[8fr_4fr] mt-2 mb-4 max-sm:gap-10">
@@ -54,55 +55,39 @@ const InventoryComponent = () => {
             </tr>
           </thead>
           <tbody>
-            <tr className="odd:bg-white even:bg-violet-200 border-b">
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium whitespace-nowrap"
-              >
-                Apple MacBook Pro 17"
-              </th>
-              <td className="px-6 py-4">Silver</td>
-              <td className="px-6 py-4">Laptop</td>
-              <td className="px-6 py-4">Acer</td>
-              <td className="px-6 py-4">1</td>
-              <td className="px-6 py-4">$1000.00</td>
-              <td className="px-6 py-4">12/24/2005</td>
-              <td className="px-6 py-4">12/24/2025</td>
-            </tr>
-            <tr className="odd:bg-white even:bg-violet-200 border-b">
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium whitespace-nowrap"
-              >
-                Apple MacBook Pro 17"
-              </th>
-              <td className="px-6 py-4">Silver</td>
-              <td className="px-6 py-4">Laptop</td>
-              <td className="px-6 py-4">Acer</td>
-              <td className="px-6 py-4">1</td>
-              <td className="px-6 py-4">$1000.00</td>
-              <td className="px-6 py-4">12/24/2005</td>
-              <td className="px-6 py-4">12/24/2025</td>
-            </tr>
-            <tr className="odd:bg-white even:bg-violet-200 border-b">
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium whitespace-nowrap"
-              >
-                Apple MacBook Pro 17"
-              </th>
-              <td className="px-6 py-4">Silver</td>
-              <td className="px-6 py-4">Laptop</td>
-              <td className="px-6 py-4">Acer</td>
-              <td className="px-6 py-4">1</td>
-              <td className="px-6 py-4">$1000.00</td>
-              <td className="px-6 py-4">12/24/2005</td>
-              <td className="px-6 py-4">12/24/2025</td>
-            </tr>
+            {itemLists.length ? (
+              itemLists.map((item, index) => (
+                <tr
+                  key={`${index}-${item.itemNum}`}
+                  className="odd:bg-white even:bg-violet-200 border-b cursor-pointer hover:odd:bg-gray-100 hover:even:bg-violet-300"
+                  onDoubleClick={() => onEdit(item.itemNum)}
+                >
+                  <th
+                    scope="row"
+                    className="px-6 py-4 font-medium whitespace-nowrap"
+                  >
+                    {item.itemNum}
+                  </th>
+                  <td className="px-6 py-4">{item.name}</td>
+                  <td className="px-6 py-4">{item.description}</td>
+                  <td className="px-6 py-4">{item.category}</td>
+                  <td className="px-6 py-4">{item.quantity}</td>
+                  <td className="px-6 py-4">{item.price}</td>
+                  <td className="px-6 py-4">{item.date_created}</td>
+                  <td className="px-6 py-4">{item.updated_at}</td>
+                </tr>
+              ))
+            ) : (
+              <tr className="odd:bg-white even:bg-violet-200 border-b">
+                <td className="px-6 py-4 text-center" colSpan={8}>
+                  No data available.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-      {isOpenModal && <InventoryModal title={"Add New Inventory"} />}
+      {isOpenModal && <InventoryModal />}
     </>
   );
 };

@@ -24,25 +24,24 @@ const useForm = (initialValues, validate) => {
   );
 
   const handleChange = (e) => {
-    console.log(initialValues, values);
-
     const { name, value } = e.target;
     dispatch({ type: "ADD_INPUT", name, value });
   };
 
-  const resetForm = useCallback(() => {
-    dispatch({ type: "RESET_FORM", payload: initialValues });
+  const dispatchForm = useCallback((vals) => {
+    dispatch({ type: "RESET_FORM", payload: vals });
     setIsError({});
-  }, [initialValues]);
+  }, []);
 
   const handleSubmit = useCallback(
     (callback) => (e) => {
-      e.preventDefault;
+      e.preventDefault();
       const errors = validateForm(values);
       setIsError(errors);
 
       if (Object.keys(errors).length === 0) {
         callback(values);
+        setIsError({});
       }
     },
     [validateForm, values]
@@ -53,7 +52,7 @@ const useForm = (initialValues, validate) => {
     handleChange,
     isError,
     handleSubmit,
-    resetForm,
+    dispatchForm,
   };
 };
 

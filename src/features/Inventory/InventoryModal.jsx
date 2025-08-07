@@ -2,9 +2,17 @@ import React from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { useInventory } from "../../context/InventoryContext";
 
-const InventoryModal = React.memo(({ title }) => {
-  const { values, handleChange, isError, handleCloseModal, handleSubmit } =
-    useInventory();
+const InventoryModal = React.memo(() => {
+  const {
+    values,
+    handleChange,
+    isError,
+    handleCloseModal,
+    handleSubmit,
+    handleSubmitForm,
+    handleDeleteItem,
+    title,
+  } = useInventory();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/30">
@@ -16,7 +24,10 @@ const InventoryModal = React.memo(({ title }) => {
         </div>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 md:gap-2">
           <div className="flex flex-col m-1">
-            <label htmlFor="">Item No.</label>
+            <label htmlFor="">
+              {" "}
+              <span className="text-red-500">*</span>Item No.
+            </label>
             <input
               type="text"
               name="itemNum"
@@ -29,7 +40,10 @@ const InventoryModal = React.memo(({ title }) => {
             />
           </div>
           <div className="flex flex-col m-1">
-            <label htmlFor="">Name</label>
+            <label htmlFor="">
+              {" "}
+              <span className="text-red-500">*</span>Name
+            </label>
             <input
               type="text"
               name="name"
@@ -39,6 +53,9 @@ const InventoryModal = React.memo(({ title }) => {
               value={values.name}
               onChange={handleChange}
             />
+            {isError.name && (
+              <span className="text-red-500">{isError.name}</span>
+            )}
           </div>
           <div className="flex flex-col m-1">
             <label htmlFor="">Description</label>
@@ -53,7 +70,10 @@ const InventoryModal = React.memo(({ title }) => {
             />
           </div>
           <div className="flex flex-col m-1">
-            <label htmlFor="">Catergory</label>
+            <label htmlFor="">
+              {" "}
+              <span className="text-red-500">*</span>Catergory
+            </label>
             <input
               type="text"
               name="category"
@@ -63,9 +83,15 @@ const InventoryModal = React.memo(({ title }) => {
               value={values.category}
               onChange={handleChange}
             />
+            {isError.category && (
+              <span className="text-red-500">{isError.category}</span>
+            )}
           </div>
           <div className="flex flex-col m-1">
-            <label htmlFor="">Quantity</label>
+            <label htmlFor="">
+              {" "}
+              <span className="text-red-500">*</span>Quantity
+            </label>
             <input
               type="number"
               name="quantity"
@@ -75,21 +101,43 @@ const InventoryModal = React.memo(({ title }) => {
               value={values.quantity}
               onChange={handleChange}
             />
+            {isError.quantity && (
+              <span className="text-red-500">{isError.quantity}</span>
+            )}
           </div>
           <div className="flex flex-col m-1">
-            <label htmlFor="">Price</label>
+            <label htmlFor="">
+              {" "}
+              <span className="text-red-500">*</span>Price
+            </label>
             <input
               type="number"
               name="price"
-              className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${isError}`}
+              className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
+                isError.price ? "border-red-500" : "border-black"
+              }`}
               value={values.price}
               onChange={handleChange}
             />
+            {isError.price && (
+              <span className="text-red-500">{isError.price}</span>
+            )}
           </div>
         </div>
-        <div className="flex justify-end px-4 pb-2 mb-3">
-          <button className="border py-2 px-1 bg-blue-200 w-1/2 md:w-2/5 rounded-sm hover:bg-blue-300 active:bg-blue-400">
-            Add
+        <div className="flex justify-end px-4 pb-2 mb-3 space-x-4">
+          {title !== "Add New Inventory" && (
+            <button
+              className="border py-2 px-1 bg-red-200 w-1/2 md:w-2/5 rounded-sm hover:bg-red-300 active:bg-red-400"
+              onClick={() => handleDeleteItem(values.itemNum)}
+            >
+              Delete
+            </button>
+          )}
+          <button
+            className="border py-2 px-1 bg-blue-200 w-1/2 md:w-2/5 rounded-sm hover:bg-blue-300 active:bg-blue-400"
+            onClick={handleSubmit(handleSubmitForm)}
+          >
+            {title === "Add New Inventory" ? "Add" : "Update"}
           </button>
         </div>
       </div>
