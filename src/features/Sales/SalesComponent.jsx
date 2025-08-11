@@ -1,35 +1,21 @@
-import { TablePagination } from "@mui/material";
-import { useInventory } from "../../context/InventoryContext";
-import InventoryModal from "./InventoryModal";
+import { useSales } from "../../context/SalesContext";
 
-const InventoryComponent = () => {
-  const {
-    search,
-    handleSearch,
-    isOpenModal,
-    handleOpenModal,
-    onEdit,
-    totalData,
-    currentPage,
-    dataPerPage,
-    handlePageChange,
-    handleRowsPerPageChange,
-    paginatedData,
-  } = useInventory();
+const SalesComponent = () => {
+  useSales();
   return (
     <>
       <header className="grid grid-cols-1 sm:grid-cols-[8fr_4fr] mt-2 mb-4 max-sm:gap-10">
         <input
           type="text"
           className="border-1 p-2 mx-4 rounded-md w-[90%] md:w-3/4 focus:ring-black focus:border-black"
-          placeholder="Search Inventory"
-          value={search}
-          onChange={handleSearch}
+          placeholder="Search Sales"
+          //   value={search}
+          //   onChange={handleSearch}
         />
         <div className="text-end mx-5">
           <button
             className="p-2 w-1/2 sm:w-3/4 rounded-md bg-blue-300 active:border-1 active:bg-blue-400"
-            onClick={handleOpenModal}
+            // onClick={handleOpenModal}
           >
             Add New
           </button>
@@ -41,33 +27,27 @@ const InventoryComponent = () => {
           <thead className="text-xs uppercase bg-violet-300">
             <tr>
               <th scope="col" className="px-6 py-3">
+                Sales No.
+              </th>
+              <th scope="col" className="px-6 py-3">
                 Item No.
               </th>
               <th scope="col" className="px-6 py-3">
-                Name
+                Quantity Sold
               </th>
               <th scope="col" className="px-6 py-3">
-                Description
+                Total Price
               </th>
               <th scope="col" className="px-6 py-3">
-                Category
+                Sold At
               </th>
               <th scope="col" className="px-6 py-3">
-                Quantity
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Price
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Date Created
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Updated At
+                Customer Name
               </th>
             </tr>
           </thead>
           <tbody>
-            {paginatedData.length ? (
+            {/* {paginatedData.length ? (
               paginatedData.map((item, index) => (
                 <tr
                   key={`${index}-${item.itemNum}`}
@@ -89,29 +69,18 @@ const InventoryComponent = () => {
                   <td className="px-6 py-4">{item.updated_at}</td>
                 </tr>
               ))
-            ) : (
-              <tr className="odd:bg-white even:bg-violet-200 border-b">
-                <td className="px-6 py-4 text-center" colSpan={8}>
-                  No data available.
-                </td>
-              </tr>
-            )}
+            ) : ( */}
+            <tr className="odd:bg-white even:bg-violet-200 border-b">
+              <td className="px-6 py-4 text-center" colSpan={8}>
+                No data available.
+              </td>
+            </tr>
+            {/* )} */}
           </tbody>
         </table>
       </div>
-      <div className="flex justify-end mt-5">
-        <TablePagination
-          component="div"
-          count={totalData}
-          page={currentPage}
-          onPageChange={handlePageChange}
-          rowsPerPage={dataPerPage}
-          onRowsPerPageChange={handleRowsPerPageChange}
-        />
-      </div>
-      {isOpenModal && <InventoryModal />}
     </>
   );
 };
 
-export default InventoryComponent;
+export default SalesComponent;

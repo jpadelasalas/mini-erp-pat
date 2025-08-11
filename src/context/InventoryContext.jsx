@@ -15,15 +15,10 @@ const InventoryContext = createContext();
 const validation = (vals) => {
   const errors = {};
 
-  if (!vals.name) {
-    errors.name = "Name is required";
-  }
-  if (!vals.category) {
-    errors.category = "Category is required";
-  }
-  if (vals.quantity <= 0) {
-    errors.quantity = "Quantity must be greater than 0";
-  }
+  if (!vals.name) errors.name = "Name is required";
+  if (!vals.category) errors.category = "Category is required";
+  if (vals.quantity <= 0) errors.quantity = "Quantity must be greater than 0";
+
   if (!vals.price) {
     errors.price = "Price is required";
   } else if (vals.price <= 0) {
@@ -43,60 +38,54 @@ export const InventoryContextProvider = ({ children }) => {
   const {
     search,
     paginatedData,
-    data: itemLists,
+    data: inventoryList,
     currentPage,
     dataPerPage,
     totalPages,
     totalData,
-    setSearch,
+    handleSearch,
     handlePageChange,
     handleRowsPerPageChange,
     setData,
   } = usePaginationWithSearch();
-
-  // Initialization of Data
-  useEffect(() => {
-    const userId = JSON.parse(sessionStorage.getItem("user")).id;
-    const docNum = JSON.parse(localStorage.getItem("docno"))[userId].inventory;
-    const items = JSON.parse(localStorage.getItem("Inventory")) || {};
-
-    setInitialValues({
-      itemNum:
-        docNum.prefix + String(docNum.docnum).padStart(docNum.length, "0"),
-      name: "",
-      description: "",
-      category: "",
-      quantity: 1,
-      price: "",
-    });
-
-    setData(items[userId] || []);
-  }, [setData]);
-
-  // Saving data in localStorage once itemLists changes
-  useEffect(() => {
-    if (!rendered.current) {
-      rendered.current = true;
-      return;
-    }
-
-    const userId = JSON.parse(sessionStorage.getItem("user")).id;
-    const items = JSON.parse(localStorage.getItem("Inventory")) || {};
-    items[userId] = itemLists;
-    localStorage.setItem("Inventory", JSON.stringify(items));
-  }, [itemLists]);
 
   const { values, handleChange, isError, handleSubmit, dispatchForm } = useForm(
     initialValues,
     validation
   );
 
-  const handleOpenModal = useCallback(() => {
-    const userId = JSON.parse(sessionStorage.getItem("user")).id;
-    const docNum = JSON.parse(localStorage.getItem("docno"))[userId].inventory;
-    const item = {
-      itemNum:
-        docNum.prefix + String(docNum.docnum).padStart(docNum.length, "0"),
+  const getUserId = () => {
+    try {
+      const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+      return user?.id || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getDocNo = (userId) => {
+    try {
+      const docnoData = JSON.parse(localStorage.getItem("docno") || "{}");
+      return docnoData?.[userId]?.inventory || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const today = () => new Date().toISOString().split("T")[0];
+
+  // Initialize
+  useEffect(() => {
+    const userId = getUserId();
+    if (!userId) return;
+
+    const docNo = getDocNo(userId);
+    if (!docNo) return;
+
+    const items = JSON.parse(localStorage.getItem("Inventory") || "{}");
+
+    const initialItem = {
+      itemNum: docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
       name: "",
       description: "",
       category: "",
@@ -104,21 +93,54 @@ export const InventoryContextProvider = ({ children }) => {
       price: "",
     };
 
-    setInitialValues(item);
+    setInitialValues(initialItem);
+    setData(items[userId] || []);
+  }, [setData]);
+
+  // Persist to localStorage
+  useEffect(() => {
+    if (!rendered.current) {
+      rendered.current = true;
+      return;
+    }
+    const userId = getUserId();
+    if (!userId) return;
+
+    const items = JSON.parse(localStorage.getItem("Inventory") || "{}");
+    items[userId] = inventoryList;
+    localStorage.setItem("Inventory", JSON.stringify(items));
+  }, [inventoryList]);
+
+  const handleOpenModal = useCallback(() => {
+    const userId = getUserId();
+    const docNo = getDocNo(userId);
+    if (!docNo) return;
+
+    const newItem = {
+      itemNum: docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
+      name: "",
+      description: "",
+      category: "",
+      quantity: 1,
+      price: "",
+    };
+
+    setInitialValues(newItem);
     setIsEditing(false);
     setTitle("Add New Inventory");
-    dispatchForm(item);
+    dispatchForm(newItem);
     setIsOpenModal(true);
   }, [dispatchForm]);
 
   const handleCloseModal = useCallback(() => {
     setIsOpenModal(false);
-    dispatchForm();
-  }, [dispatchForm]);
+    dispatchForm(initialValues);
+  }, [dispatchForm, initialValues]);
 
   const onEdit = useCallback(
     (id) => {
-      const item = itemLists.find((item) => item.itemNum === id);
+      const item = inventoryList.find((item) => item.itemNum === id);
+      if (!item) return;
 
       setIsEditing(true);
       setTitle("Update Item");
@@ -126,62 +148,61 @@ export const InventoryContextProvider = ({ children }) => {
       dispatchForm(item);
       setIsOpenModal(true);
     },
-    [itemLists, dispatchForm]
+    [inventoryList, dispatchForm]
   );
 
-  const handleAddNewInventory = (vals) => {
+  const handleAddInventory = (vals) => {
     setData((prev) => [
       ...prev,
       {
         ...vals,
-        date_created: new Date().toLocaleDateString(),
-        updated_at: new Date().toLocaleDateString(),
+        date_created: today(),
+        updated_at: today(),
       },
     ]);
 
-    const userId = JSON.parse(sessionStorage.getItem("user")).id;
-    const docno = JSON.parse(localStorage.getItem("docno"));
-    docno[userId].inventory.docnum += 1;
-    localStorage.setItem("docno", JSON.stringify(docno));
-    Swal.fire({
-      icon: "success",
-      title: "Added Successfully!",
-    }).then((alert) => {
-      if (alert.isConfirmed) handleCloseModal();
+    const userId = getUserId();
+    const docnoData = JSON.parse(localStorage.getItem("docno") || "{}");
+    if (docnoData?.[userId]?.inventory) {
+      docnoData[userId].inventory.docnum += 1;
+      localStorage.setItem("docno", JSON.stringify(docnoData));
+    }
+
+    Swal.fire({ icon: "success", title: "Added Successfully!" }).then((res) => {
+      if (res.isConfirmed) handleCloseModal();
     });
   };
 
   const handleUpdateInventory = (vals) => {
     setData((prev) =>
       prev.map((item) =>
-        item.itemNum === vals.itemNum
-          ? { ...vals, updated_at: new Date().toLocaleDateString() }
-          : item
+        item.itemNum === vals.itemNum ? { ...vals, updated_at: today() } : item
       )
     );
-    Swal.fire({
-      icon: "success",
-      title: "Updated Successfully!",
-    }).then((alert) => {
-      if (alert.isConfirmed) handleCloseModal();
-    });
+    Swal.fire({ icon: "success", title: "Updated Successfully!" }).then(
+      (res) => {
+        if (res.isConfirmed) handleCloseModal();
+      }
+    );
   };
 
-  const handleSubmitForm = (values) => {
-    if (isEditing) {
-      handleUpdateInventory(values);
-    } else {
-      handleAddNewInventory(values);
-    }
+  const handleSubmitForm = (formValues) => {
+    isEditing
+      ? handleUpdateInventory(formValues)
+      : handleAddInventory(formValues);
   };
 
   const handleDeleteItem = (id) => {
-    setData((prev) => prev.filter((item) => item.itemNum !== id));
     Swal.fire({
-      icon: "success",
-      title: "Deleted Successfully!",
-    }).then((alert) => {
-      if (alert.isConfirmed) handleCloseModal();
+      title: "Are you sure?",
+      text: "This action cannot be undone!",
+      icon: "warning",
+      showCancelButton: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setData((prev) => prev.filter((item) => item.itemNum !== id));
+        Swal.fire({ icon: "success", title: "Deleted Successfully!" });
+      }
     });
   };
 
@@ -189,7 +210,7 @@ export const InventoryContextProvider = ({ children }) => {
     <InventoryContext.Provider
       value={{
         search,
-        setSearch,
+        handleSearch,
         isOpenModal,
         setIsOpenModal,
         handleOpenModal,

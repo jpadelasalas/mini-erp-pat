@@ -37,6 +37,11 @@ const usePaginationWithSearch = () => {
     return Math.ceil(totalData / dataPerPage);
   }, [totalData, dataPerPage]);
 
+  const handleSearch = useCallback((e) => {
+    setSearch(e.target.value);
+    setCurrentPage(0);
+  }, []);
+
   return {
     search,
     data,
@@ -48,7 +53,7 @@ const usePaginationWithSearch = () => {
     handlePageChange,
     handleRowsPerPageChange,
     setData,
-    setSearch,
+    handleSearch,
   };
 };
 

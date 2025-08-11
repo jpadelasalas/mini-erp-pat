@@ -1,4 +1,3 @@
-import React from "react";
 import { InventoryContextProvider } from "../context/InventoryContext";
 import InventoryComponent from "../features/Inventory/InventoryComponent";
 

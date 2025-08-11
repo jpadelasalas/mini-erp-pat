@@ -1,7 +1,12 @@
-import React from "react";
+import { SalesContextProvider } from "../context/SalesContext";
+import SalesComponent from "../features/Sales/SalesComponent";
 
 const Sales = () => {
-  return <div>This is Sales</div>;
+  return (
+    <SalesContextProvider>
+      <SalesComponent />
+    </SalesContextProvider>
+  );
 };
 
 export default Sales;
