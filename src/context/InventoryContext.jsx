@@ -6,9 +6,9 @@ import {
   useRef,
   useState,
 } from "react";
-import useDebounce from "../hooks/useDebounce";
 import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
+import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
 
 const InventoryContext = createContext();
 
@@ -34,15 +34,27 @@ const validation = (vals) => {
 };
 
 export const InventoryContextProvider = ({ children }) => {
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 700);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [initialValues, setInitialValues] = useState({});
-  const [itemLists, setItemLists] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const rendered = useRef(false);
 
+  const {
+    search,
+    paginatedData,
+    data: itemLists,
+    currentPage,
+    dataPerPage,
+    totalPages,
+    totalData,
+    setSearch,
+    handlePageChange,
+    handleRowsPerPageChange,
+    setData,
+  } = usePaginationWithSearch();
+
+  // Initialization of Data
   useEffect(() => {
     const userId = JSON.parse(sessionStorage.getItem("user")).id;
     const docNum = JSON.parse(localStorage.getItem("docno"))[userId].inventory;
@@ -58,9 +70,10 @@ export const InventoryContextProvider = ({ children }) => {
       price: "",
     });
 
-    setItemLists(items[userId] || []);
-  }, []);
+    setData(items[userId] || []);
+  }, [setData]);
 
+  // Saving data in localStorage once itemLists changes
   useEffect(() => {
     if (!rendered.current) {
       rendered.current = true;
@@ -117,7 +130,7 @@ export const InventoryContextProvider = ({ children }) => {
   );
 
   const handleAddNewInventory = (vals) => {
-    setItemLists((prev) => [
+    setData((prev) => [
       ...prev,
       {
         ...vals,
@@ -139,7 +152,7 @@ export const InventoryContextProvider = ({ children }) => {
   };
 
   const handleUpdateInventory = (vals) => {
-    setItemLists((prev) =>
+    setData((prev) =>
       prev.map((item) =>
         item.itemNum === vals.itemNum
           ? { ...vals, updated_at: new Date().toLocaleDateString() }
@@ -163,7 +176,7 @@ export const InventoryContextProvider = ({ children }) => {
   };
 
   const handleDeleteItem = (id) => {
-    setItemLists((prev) => prev.filter((item) => item.itemNum !== id));
+    setData((prev) => prev.filter((item) => item.itemNum !== id));
     Swal.fire({
       icon: "success",
       title: "Deleted Successfully!",
@@ -172,18 +185,11 @@ export const InventoryContextProvider = ({ children }) => {
     });
   };
 
-  useEffect(() => {
-    if (debouncedSearch.trim() != "") {
-      console.log(debouncedSearch);
-    }
-  }, [debouncedSearch]);
-
   return (
     <InventoryContext.Provider
       value={{
         search,
         setSearch,
-        itemLists,
         isOpenModal,
         setIsOpenModal,
         handleOpenModal,
@@ -197,6 +203,13 @@ export const InventoryContextProvider = ({ children }) => {
         handleDeleteItem,
         dispatchForm,
         title,
+        currentPage,
+        dataPerPage,
+        totalPages,
+        totalData,
+        handlePageChange,
+        handleRowsPerPageChange,
+        paginatedData,
       }}
     >
       {children}

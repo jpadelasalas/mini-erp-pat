@@ -33,6 +33,11 @@ const useForm = (initialValues, validate) => {
     setIsError({});
   }, []);
 
+  const resetForm = useCallback(() => {
+    dispatch({ type: "RESET_FORM", payload: initialValues });
+    setIsError({});
+  }, [initialValues]);
+
   const handleSubmit = useCallback(
     (callback) => (e) => {
       e.preventDefault();
@@ -53,6 +58,7 @@ const useForm = (initialValues, validate) => {
     isError,
     handleSubmit,
     dispatchForm,
+    resetForm,
   };
 };
 

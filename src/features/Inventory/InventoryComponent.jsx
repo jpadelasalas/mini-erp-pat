@@ -1,9 +1,21 @@
+import { TablePagination } from "@mui/material";
 import { useInventory } from "../../context/InventoryContext";
 import InventoryModal from "./InventoryModal";
 
 const InventoryComponent = () => {
-  const { search, setSearch, itemLists, isOpenModal, handleOpenModal, onEdit } =
-    useInventory();
+  const {
+    search,
+    setSearch,
+    isOpenModal,
+    handleOpenModal,
+    onEdit,
+    totalData,
+    currentPage,
+    dataPerPage,
+    handlePageChange,
+    handleRowsPerPageChange,
+    paginatedData,
+  } = useInventory();
   return (
     <>
       <header className="grid grid-cols-1 sm:grid-cols-[8fr_4fr] mt-2 mb-4 max-sm:gap-10">
@@ -55,8 +67,8 @@ const InventoryComponent = () => {
             </tr>
           </thead>
           <tbody>
-            {itemLists.length ? (
-              itemLists.map((item, index) => (
+            {paginatedData.length ? (
+              paginatedData.map((item, index) => (
                 <tr
                   key={`${index}-${item.itemNum}`}
                   className="odd:bg-white even:bg-violet-200 border-b cursor-pointer hover:odd:bg-gray-100 hover:even:bg-violet-300"
@@ -86,6 +98,16 @@ const InventoryComponent = () => {
             )}
           </tbody>
         </table>
+      </div>
+      <div className="flex justify-end mt-5">
+        <TablePagination
+          component="div"
+          count={totalData}
+          page={currentPage}
+          onPageChange={handlePageChange}
+          rowsPerPage={dataPerPage}
+          onRowsPerPageChange={handleRowsPerPageChange}
+        />
       </div>
       {isOpenModal && <InventoryModal />}
     </>
