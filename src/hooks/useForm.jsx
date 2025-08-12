@@ -14,7 +14,7 @@ const funcDispatch = (state, action) => {
   }
 };
 
-const useForm = (initialValues, validate) => {
+const useForm = (initialValues = null, validate) => {
   const [values, dispatch] = useReducer(funcDispatch, initialValues);
   const [isError, setIsError] = useState({});
 

@@ -30,7 +30,6 @@ const validation = (vals) => {
 
 export const InventoryContextProvider = ({ children }) => {
   const [isOpenModal, setIsOpenModal] = useState(false);
-  const [initialValues, setInitialValues] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const rendered = useRef(false);
@@ -50,7 +49,7 @@ export const InventoryContextProvider = ({ children }) => {
   } = usePaginationWithSearch();
 
   const { values, handleChange, isError, handleSubmit, dispatchForm } = useForm(
-    initialValues,
+    {},
     validation
   );
 
@@ -84,16 +83,6 @@ export const InventoryContextProvider = ({ children }) => {
 
     const items = JSON.parse(localStorage.getItem("Inventory") || "{}");
 
-    const initialItem = {
-      itemNum: docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
-      name: "",
-      description: "",
-      category: "",
-      quantity: 1,
-      price: "",
-    };
-
-    setInitialValues(initialItem);
     setData(items[userId] || []);
   }, [setData]);
 
@@ -125,7 +114,6 @@ export const InventoryContextProvider = ({ children }) => {
       price: "",
     };
 
-    setInitialValues(newItem);
     setIsEditing(false);
     setTitle("Add New Inventory");
     dispatchForm(newItem);
@@ -134,8 +122,7 @@ export const InventoryContextProvider = ({ children }) => {
 
   const handleCloseModal = useCallback(() => {
     setIsOpenModal(false);
-    dispatchForm(initialValues);
-  }, [dispatchForm, initialValues]);
+  }, []);
 
   const onEdit = useCallback(
     (id) => {
@@ -144,7 +131,6 @@ export const InventoryContextProvider = ({ children }) => {
 
       setIsEditing(true);
       setTitle("Update Item");
-      setInitialValues(item);
       dispatchForm(item);
       setIsOpenModal(true);
     },
@@ -166,11 +152,12 @@ export const InventoryContextProvider = ({ children }) => {
     if (docnoData?.[userId]?.inventory) {
       docnoData[userId].inventory.docnum += 1;
       localStorage.setItem("docno", JSON.stringify(docnoData));
+      Swal.fire({ icon: "success", title: "Added Successfully!" }).then(
+        (res) => {
+          if (res.isConfirmed) handleCloseModal();
+        }
+      );
     }
-
-    Swal.fire({ icon: "success", title: "Added Successfully!" }).then((res) => {
-      if (res.isConfirmed) handleCloseModal();
-    });
   };
 
   const handleUpdateInventory = (vals) => {

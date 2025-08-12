@@ -25,7 +25,7 @@ const InventoryComponent = () => {
     handleCloseModal,
   } = useInventory();
 
-  const children = () => (
+  const children = (
     <div className="p-4 grid grid-cols-1 md:grid-cols-2 md:gap-2">
       <div className="flex flex-col m-1">
         <label htmlFor="">
@@ -126,7 +126,7 @@ const InventoryComponent = () => {
     </div>
   );
 
-  const footer = () => (
+  const footer = (
     <div className="flex justify-end px-4 pb-2 mb-3 space-x-4">
       {title !== "Add New Inventory" && (
         <button
@@ -241,8 +241,8 @@ const InventoryComponent = () => {
       {isOpenModal && (
         <ModalComponent
           title={title}
-          footer={footer()}
-          children={children()}
+          footer={footer}
+          children={children}
           handleCloseModal={handleCloseModal}
         />
       )}
