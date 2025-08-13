@@ -17,7 +17,7 @@ const validation = (vals) => {
 
   if (!vals.name) errors.name = "Name is required";
   if (!vals.category) errors.category = "Category is required";
-  if (vals.quantity <= 0) errors.quantity = "Quantity must be greater than 0";
+  if (vals.quantity <= -1) errors.quantity = "Quantity must be greater than -1";
 
   if (!vals.price) {
     errors.price = "Price is required";

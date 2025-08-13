@@ -54,6 +54,7 @@ const useForm = (initialValues = null, validate) => {
 
   return {
     values,
+    dispatch,
     handleChange,
     isError,
     handleSubmit,

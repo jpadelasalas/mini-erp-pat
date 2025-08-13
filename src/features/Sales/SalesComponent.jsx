@@ -1,9 +1,12 @@
+import { TablePagination } from "@mui/material";
 import ModalComponent from "../../components/ModalComponent";
 import { useSales } from "../../context/SalesContext";
 
 const SalesComponent = () => {
   const {
+    paginatedData,
     isOpenModal,
+    memoizedItems,
     title,
     search,
     handleSearch,
@@ -12,7 +15,15 @@ const SalesComponent = () => {
     values,
     isError,
     handleChange,
+    handleItemChange,
+    handleQuantitySoldChange,
     handleSubmit,
+    handleSubmitForm,
+    currentPage,
+    dataPerPage,
+    totalData,
+    handlePageChange,
+    handleRowsPerPageChange,
   } = useSales();
 
   const children = (
@@ -26,9 +37,9 @@ const SalesComponent = () => {
           type="text"
           name="salesNum"
           className={`border-1 my-1 px-2 py-1 rounded-sm w-full cursor-not-allowed ${
-            isError.itemNum ? "border-red-500" : "border-black"
+            isError.salesNum ? "border-red-500" : "border-black"
           }`}
-          value={values.itemNum}
+          value={values.salesNum}
           onChange={handleChange}
           readOnly
         />
@@ -40,90 +51,91 @@ const SalesComponent = () => {
         </label>
         <select
           name="itemNum"
-          className="border-1 my-1 px-2 py-1 rounded-sm w-full"
-          id=""
-        ></select>
-        {/* <input
-          type="text"
-          name="name"
           className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.name ? "border-red-500" : "border-black"
+            isError.itemNum ? "border-red-500" : "border-black"
           }`}
-          value={values.name}
-          onChange={handleChange}
-        /> */}
-        {isError.name && <span className="text-red-500">{isError.name}</span>}
-      </div>
-      <div className="flex flex-col m-1">
-        <label htmlFor="">Description</label>
-        <input
-          type="text"
-          name="description"
-          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.description ? "border-red-500" : "border-black"
-          }`}
-          value={values.description}
-          onChange={handleChange}
-        />
-      </div>
-      <div className="flex flex-col m-1">
-        <label htmlFor="">
-          {" "}
-          <span className="text-red-500">*</span>Catergory
-        </label>
-        <input
-          type="text"
-          name="category"
-          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.category ? "border-red-500" : "border-black"
-          }`}
-          value={values.category}
-          onChange={handleChange}
-        />
-        {isError.category && (
-          <span className="text-red-500">{isError.category}</span>
+          value={values.itemNum}
+          onChange={handleItemChange}
+        >
+          <option value="">--Select Item--</option>
+          {memoizedItems}
+        </select>
+        {isError.itemNum && (
+          <span className="text-red-500">{isError.itemNum}</span>
         )}
       </div>
       <div className="flex flex-col m-1">
         <label htmlFor="">
           {" "}
-          <span className="text-red-500">*</span>Quantity
+          <span className="text-red-500">*</span>Quantity Sold
         </label>
         <input
           type="number"
-          name="quantity"
+          name="quantity_sold"
           className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.quantity ? "border-red-500" : "border-black"
+            isError.quantity_sold ? "border-red-500" : "border-black"
           }`}
-          value={values.quantity}
-          onChange={handleChange}
+          value={values.quantity_sold}
+          onChange={handleQuantitySoldChange}
         />
-        {isError.quantity && (
-          <span className="text-red-500">{isError.quantity}</span>
+        {isError.quantity_sold && (
+          <span className="text-red-500">{isError.quantity_sold}</span>
         )}
       </div>
       <div className="flex flex-col m-1">
         <label htmlFor="">
           {" "}
-          <span className="text-red-500">*</span>Price
+          <span className="text-red-500">*</span>Total Price
         </label>
         <input
           type="number"
-          name="price"
-          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.price ? "border-red-500" : "border-black"
+          name="total_price"
+          className={`border-1 my-1 px-2 py-1 rounded-sm w-full cursor-not-allowed ${
+            isError.total_price ? "border-red-500" : "border-black"
           }`}
-          value={values.price}
+          value={values.total_price}
+          readOnly
+        />
+        {isError.total_price && (
+          <span className="text-red-500">{isError.total_price}</span>
+        )}
+      </div>
+      <div className="flex flex-col m-1">
+        <label htmlFor="">
+          {" "}
+          <span className="text-red-500">*</span>Sold At
+        </label>
+        <input
+          type="datetime-local"
+          name="sold_at"
+          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
+            isError.sold_at ? "border-red-500" : "border-black"
+          }`}
+          value={values.sold_at}
           onChange={handleChange}
         />
-        {isError.price && <span className="text-red-500">{isError.price}</span>}
+        {isError.sold_at && (
+          <span className="text-red-500">{isError.sold_at}</span>
+        )}
+      </div>
+      <div className="flex flex-col m-1">
+        <label htmlFor="">Customer Name</label>
+        <input
+          type="text"
+          name="customer_name"
+          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
+            isError.customer_name ? "border-red-500" : "border-black"
+          }`}
+          value={values.customer_name}
+          onChange={handleChange}
+        />
       </div>
     </div>
   );
 
   const footer = (
     <div className="flex justify-end px-4 pb-2 mb-3 space-x-4">
-      {title !== "Add New Inventory" && (
+      {title !== "Add New Sales" && (
         <button
           className="border py-2 px-1 bg-red-200 w-1/2 md:w-2/5 rounded-sm hover:bg-red-300 active:bg-red-400"
           //   onClick={() => handleDeleteItem(values.itemNum)}
@@ -133,9 +145,9 @@ const SalesComponent = () => {
       )}
       <button
         className="border py-2 px-1 bg-blue-200 w-1/2 md:w-2/5 rounded-sm hover:bg-blue-300 active:bg-blue-400"
-        // onClick={handleSubmit(handleSubmitForm)}
+        onClick={handleSubmit(handleSubmitForm)}
       >
-        {title === "Add New Inventory" ? "Add" : "Update"}
+        {title === "Add New Sales" ? "Add" : "Update"}
       </button>
     </div>
   );
@@ -184,47 +196,56 @@ const SalesComponent = () => {
             </tr>
           </thead>
           <tbody>
-            {/* {paginatedData.length ? (
+            {paginatedData.length ? (
               paginatedData.map((item, index) => (
                 <tr
                   key={`${index}-${item.itemNum}`}
                   className="odd:bg-white even:bg-violet-200 border-b cursor-pointer hover:odd:bg-gray-100 hover:even:bg-violet-300"
-                  onDoubleClick={() => onEdit(item.itemNum)}
+                  //   onDoubleClick={() => onEdit(item.itemNum)}
                 >
                   <th
                     scope="row"
                     className="px-6 py-4 font-medium whitespace-nowrap"
                   >
-                    {item.itemNum}
+                    {item.salesNum}
                   </th>
-                  <td className="px-6 py-4">{item.name}</td>
-                  <td className="px-6 py-4">{item.description}</td>
-                  <td className="px-6 py-4">{item.category}</td>
-                  <td className="px-6 py-4">{item.quantity}</td>
-                  <td className="px-6 py-4">{item.price}</td>
-                  <td className="px-6 py-4">{item.date_created}</td>
-                  <td className="px-6 py-4">{item.updated_at}</td>
+                  <td className="px-6 py-4">{item.itemNum}</td>
+                  <td className="px-6 py-4">{item.quantity_sold}</td>
+                  <td className="px-6 py-4">{item.total_price}</td>
+                  <td className="px-6 py-4">
+                    {item.sold_at.split("T")[0]} {item.sold_at.split("T")[1]}
+                  </td>
+                  <td className="px-6 py-4">{item.customer_name}</td>
                 </tr>
               ))
-            ) : ( */}
-            <tr className="odd:bg-white even:bg-violet-200 border-b">
-              <td className="px-6 py-4 text-center" colSpan={8}>
-                No data available.
-              </td>
-            </tr>
-            {/* )} */}
+            ) : (
+              <tr className="odd:bg-white even:bg-violet-200 border-b">
+                <td className="px-6 py-4 text-center" colSpan={6}>
+                  No data available.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
-
-        {isOpenModal && (
-          <ModalComponent
-            title={title}
-            footer={footer}
-            children={children}
-            handleCloseModal={handleCloseModal}
+        <div className="flex justify-end mt-5">
+          <TablePagination
+            component="div"
+            count={totalData}
+            page={currentPage}
+            onPageChange={handlePageChange}
+            rowsPerPage={dataPerPage}
+            onRowsPerPageChange={handleRowsPerPageChange}
           />
-        )}
+        </div>
       </div>
+      {isOpenModal && (
+        <ModalComponent
+          title={title}
+          footer={footer}
+          children={children}
+          handleCloseModal={handleCloseModal}
+        />
+      )}
     </>
   );
 };
