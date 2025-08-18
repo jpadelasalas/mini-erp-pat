@@ -10,48 +10,54 @@ import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
 
-const InventoryContext = createContext();
+const EmployeesContext = createContext();
 
 const validation = (vals) => {
-  const errors = {};
-
-  if (!vals.name) errors.name = "Name is required";
-  if (!vals.category) errors.category = "Category is required";
-  if (vals.quantity <= -1) errors.quantity = "Quantity must be greater than -1";
-
-  if (!vals.price) {
-    errors.price = "Price is required";
-  } else if (vals.price <= 0) {
-    errors.price = "Price must be greater than 0";
-  }
+  let errors = {};
+  if (!vals.last_name) errors.last_name = "Last name is required";
+  if (!vals.first_name) errors.first_name = "First name is required";
+  if (!vals.position) errors.position = "Position is required";
+  if (!vals.email) errors.email = "Email is required";
+  if (!vals.status) errors.status = "Status is required";
+  if (!vals.joined_at) errors.joined_at = "Joined At is required";
 
   return errors;
 };
 
-export const InventoryContextProvider = ({ children }) => {
+export const EmployeesContextProvider = ({ children }) => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const rendered = useRef(false);
 
-  const {
-    search,
-    paginatedData,
-    data: inventoryList,
-    currentPage,
-    dataPerPage,
-    totalPages,
-    totalData,
-    handleSearch,
-    handlePageChange,
-    handleRowsPerPageChange,
-    setData,
-  } = usePaginationWithSearch();
-
   const { values, handleChange, isError, handleSubmit, dispatchForm } = useForm(
     {},
     validation
   );
+
+  const {
+    search,
+    paginatedData,
+    data: employeeList,
+    totalPages,
+    totalData,
+    currentPage,
+    dataPerPage,
+    handlePageChange,
+    handleRowsPerPageChange,
+    handleSearch,
+    setData,
+  } = usePaginationWithSearch();
+
+  const getLocalData = useCallback((key, defaultVal = {}) => {
+    try {
+      return JSON.parse(
+        localStorage.getItem(key) || JSON.stringify(defaultVal)
+      );
+    } catch {
+      return defaultVal;
+    }
+  }, []);
 
   const getUserId = () => {
     try {
@@ -62,16 +68,17 @@ export const InventoryContextProvider = ({ children }) => {
     }
   };
 
-  const getDocNo = (userId) => {
-    try {
-      const docnoData = JSON.parse(localStorage.getItem("docno") || "{}");
-      return docnoData?.[userId]?.inventory || null;
-    } catch {
-      return null;
-    }
-  };
-
-  const today = () => new Date().toISOString().split("T")[0];
+  const getDocNo = useCallback(
+    (userId) => {
+      try {
+        const docnoData = getLocalData("docno");
+        return docnoData?.[userId]?.employees || null;
+      } catch {
+        return null;
+      }
+    },
+    [getLocalData]
+  );
 
   // Initialize
   useEffect(() => {
@@ -81,10 +88,10 @@ export const InventoryContextProvider = ({ children }) => {
     const docNo = getDocNo(userId);
     if (!docNo) return;
 
-    const items = JSON.parse(localStorage.getItem("Inventory") || "{}");
+    const items = getLocalData("Employees");
 
     setData(items[userId] || []);
-  }, [setData]);
+  }, [setData, getLocalData, getDocNo]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -95,10 +102,10 @@ export const InventoryContextProvider = ({ children }) => {
     const userId = getUserId();
     if (!userId) return;
 
-    const items = JSON.parse(localStorage.getItem("Inventory") || "{}");
-    items[userId] = inventoryList;
-    localStorage.setItem("Inventory", JSON.stringify(items));
-  }, [inventoryList]);
+    const items = getLocalData("Employees");
+    items[userId] = employeeList;
+    localStorage.setItem("Employees", JSON.stringify(items));
+  }, [employeeList, getLocalData]);
 
   const handleOpenModal = useCallback(() => {
     const userId = getUserId();
@@ -106,19 +113,21 @@ export const InventoryContextProvider = ({ children }) => {
     if (!docNo) return;
 
     const newItem = {
-      itemNum: docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
-      name: "",
-      description: "",
-      category: "",
-      quantity: 1,
-      price: "",
+      employeeId:
+        docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
+      last_name: "",
+      first_name: "",
+      position: "",
+      email: "",
+      status: "",
+      joined_at: "",
     };
 
     setIsEditing(false);
-    setTitle("Add New Inventory");
+    setTitle("Add New Employee");
     dispatchForm(newItem);
     setIsOpenModal(true);
-  }, [dispatchForm]);
+  }, [dispatchForm, getDocNo]);
 
   const handleCloseModal = useCallback(() => {
     setIsOpenModal(false);
@@ -127,7 +136,7 @@ export const InventoryContextProvider = ({ children }) => {
   const onEdit = useCallback(
     (item) => {
       setIsEditing(true);
-      setTitle("Update Item");
+      setTitle("Update Employee");
       dispatchForm(item);
       setIsOpenModal(true);
     },
@@ -135,19 +144,12 @@ export const InventoryContextProvider = ({ children }) => {
   );
 
   const handleAddInventory = (vals) => {
-    setData((prev) => [
-      ...prev,
-      {
-        ...vals,
-        date_created: today(),
-        updated_at: today(),
-      },
-    ]);
+    setData((prev) => [...prev, vals]);
 
     const userId = getUserId();
     const docnoData = JSON.parse(localStorage.getItem("docno") || "{}");
-    if (docnoData?.[userId]?.inventory) {
-      docnoData[userId].inventory.docnum += 1;
+    if (docnoData?.[userId]?.employees) {
+      docnoData[userId].employees.docnum += 1;
       localStorage.setItem("docno", JSON.stringify(docnoData));
       Swal.fire({ icon: "success", title: "Added Successfully!" }).then(
         (res) => {
@@ -159,9 +161,7 @@ export const InventoryContextProvider = ({ children }) => {
 
   const handleUpdateInventory = (vals) => {
     setData((prev) =>
-      prev.map((item) =>
-        item.itemNum === vals.itemNum ? { ...vals, updated_at: today() } : item
-      )
+      prev.map((item) => (item.itemNum === vals.itemNum ? vals : item))
     );
     Swal.fire({ icon: "success", title: "Updated Successfully!" }).then(
       (res) => {
@@ -185,7 +185,7 @@ export const InventoryContextProvider = ({ children }) => {
         showCancelButton: true,
       }).then((result) => {
         if (result.isConfirmed) {
-          setData((prev) => prev.filter((item) => item.itemNum !== id));
+          setData((prev) => prev.filter((item) => item.employeeId !== id));
           Swal.fire({ icon: "success", title: "Deleted Successfully!" });
           setIsOpenModal(false);
         }
@@ -195,35 +195,33 @@ export const InventoryContextProvider = ({ children }) => {
   );
 
   return (
-    <InventoryContext.Provider
+    <EmployeesContext.Provider
       value={{
         search,
-        handleSearch,
-        isOpenModal,
-        setIsOpenModal,
-        handleOpenModal,
-        handleCloseModal,
-        values,
-        handleChange,
-        isError,
-        onEdit,
-        handleSubmit,
-        handleSubmitForm,
-        handleDeleteItem,
-        dispatchForm,
-        title,
+        paginatedData,
         currentPage,
         dataPerPage,
         totalPages,
         totalData,
+        handleSearch,
         handlePageChange,
         handleRowsPerPageChange,
-        paginatedData,
+        isOpenModal,
+        title,
+        handleCloseModal,
+        values,
+        handleChange,
+        isError,
+        handleSubmitForm,
+        handleSubmit,
+        handleOpenModal,
+        onEdit,
+        handleDeleteItem,
       }}
     >
       {children}
-    </InventoryContext.Provider>
+    </EmployeesContext.Provider>
   );
 };
 
-export const useInventory = () => useContext(InventoryContext);
+export const useEmployees = () => useContext(EmployeesContext);

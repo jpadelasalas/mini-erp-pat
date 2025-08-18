@@ -1,146 +1,168 @@
 import { TablePagination } from "@mui/material";
 import ModalComponent from "../../components/ModalComponent";
-import { useSales } from "../../context/SalesContext";
+import { useEmployees } from "../../context/EmployeesContext";
 
-const SalesComponent = () => {
+const EmployeesComponent = () => {
   const {
-    paginatedData,
-    isOpenModal,
-    memoizedItems,
-    title,
     search,
     handleSearch,
-    handleOpenModal,
+    isOpenModal,
+    title,
     handleCloseModal,
     values,
-    isError,
     handleChange,
-    handleItemChange,
-    handleQuantitySoldChange,
-    handleSubmit,
+    isError,
     handleSubmitForm,
-    currentPage,
-    dataPerPage,
-    totalData,
-    handlePageChange,
-    handleRowsPerPageChange,
+    handleSubmit,
+    handleOpenModal,
+    paginatedData,
     onEdit,
     handleDeleteItem,
-  } = useSales();
+    totalData,
+    currentPage,
+    dataPerPage,
+    handlePageChange,
+    handleRowsPerPageChange,
+  } = useEmployees();
 
   const children = (
     <div className="p-4 grid grid-cols-1 md:grid-cols-2 md:gap-2">
+      <div className="m-1 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2">
+        <div className="col-span-1">
+          <label htmlFor="">
+            {" "}
+            <span className="text-red-500">*</span>Employee ID
+          </label>
+          <input
+            type="text"
+            name="employeeId"
+            className={`border-1 my-1 px-2 py-1 rounded-sm w-full cursor-not-allowed ${
+              isError.employeeId ? "border-red-500" : "border-black"
+            }`}
+            value={values.employeeId}
+            onChange={handleChange}
+            readOnly
+          />
+        </div>
+      </div>
       <div className="flex flex-col m-1">
         <label htmlFor="">
           {" "}
-          <span className="text-red-500">*</span>Sales No.
+          <span className="text-red-500">*</span>Last Name
         </label>
         <input
           type="text"
-          name="salesNum"
-          className={`border-1 my-1 px-2 py-1 rounded-sm w-full cursor-not-allowed ${
-            isError.salesNum ? "border-red-500" : "border-black"
+          name="last_name"
+          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
+            isError.last_name ? "border-red-500" : "border-black"
           }`}
-          value={values.salesNum}
+          value={values.last_name}
           onChange={handleChange}
-          readOnly
         />
+        {isError.last_name && (
+          <span className="text-red-500">{isError.last_name}</span>
+        )}
       </div>
       <div className="flex flex-col m-1">
         <label htmlFor="">
           {" "}
-          <span className="text-red-500">*</span>Item
+          <span className="text-red-500">*</span>First Name
+        </label>
+        <input
+          type="text"
+          name="first_name"
+          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
+            isError.first_name ? "border-red-500" : "border-black"
+          }`}
+          value={values.first_name}
+          onChange={handleChange}
+        />
+        {isError.first_name && (
+          <span className="text-red-500">{isError.first_name}</span>
+        )}
+      </div>
+      <div className="flex flex-col m-1">
+        <label htmlFor="">
+          {" "}
+          <span className="text-red-500">*</span>Position
+        </label>
+        <input
+          type="text"
+          name="position"
+          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
+            isError.position ? "border-red-500" : "border-black"
+          }`}
+          value={values.position}
+          onChange={handleChange}
+        />
+        {isError.position && (
+          <span className="text-red-500">{isError.position}</span>
+        )}
+      </div>
+      <div className="flex flex-col m-1">
+        <label htmlFor="">
+          {" "}
+          <span className="text-red-500">*</span>Email
+        </label>
+        <input
+          type="email"
+          name="email"
+          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
+            isError.email ? "border-red-500" : "border-black"
+          }`}
+          value={values.email}
+          onChange={handleChange}
+        />
+        {isError.email && <span className="text-red-500">{isError.email}</span>}
+      </div>
+      <div className="flex flex-col m-1">
+        <label htmlFor="">
+          {" "}
+          <span className="text-red-500">*</span>Status
         </label>
         <select
-          name="itemNum"
+          name="status"
           className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.itemNum ? "border-red-500" : "border-black"
+            isError.status ? "border-red-500" : "border-black"
           }`}
-          value={values.itemNum}
-          onChange={handleItemChange}
+          value={values.status}
+          onChange={handleChange}
         >
-          <option value="">--Select Item--</option>
-          {memoizedItems}
+          <option value="">--Select Status--</option>
+          <option value="AC">Active</option>
+          <option value="RE">Resigned</option>
         </select>
-        {isError.itemNum && (
-          <span className="text-red-500">{isError.itemNum}</span>
+        {isError.status && (
+          <span className="text-red-500">{isError.status}</span>
         )}
       </div>
       <div className="flex flex-col m-1">
         <label htmlFor="">
           {" "}
-          <span className="text-red-500">*</span>Quantity Sold
-        </label>
-        <input
-          type="number"
-          name="quantity_sold"
-          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.quantity_sold ? "border-red-500" : "border-black"
-          }`}
-          value={values.quantity_sold}
-          onChange={handleQuantitySoldChange}
-        />
-        {isError.quantity_sold && (
-          <span className="text-red-500">{isError.quantity_sold}</span>
-        )}
-      </div>
-      <div className="flex flex-col m-1">
-        <label htmlFor="">
-          {" "}
-          <span className="text-red-500">*</span>Total Price
-        </label>
-        <input
-          type="number"
-          name="total_price"
-          className={`border-1 my-1 px-2 py-1 rounded-sm w-full cursor-not-allowed ${
-            isError.total_price ? "border-red-500" : "border-black"
-          }`}
-          value={values.total_price}
-          readOnly
-        />
-        {isError.total_price && (
-          <span className="text-red-500">{isError.total_price}</span>
-        )}
-      </div>
-      <div className="flex flex-col m-1">
-        <label htmlFor="">
-          {" "}
-          <span className="text-red-500">*</span>Sold At
+          <span className="text-red-500">*</span>Joined At
         </label>
         <input
           type="datetime-local"
-          name="sold_at"
+          name="joined_at"
           className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.sold_at ? "border-red-500" : "border-black"
+            isError.joined_at ? "border-red-500" : "border-black"
           }`}
-          value={values.sold_at}
+          value={values.joined_at}
           onChange={handleChange}
         />
-        {isError.sold_at && (
-          <span className="text-red-500">{isError.sold_at}</span>
+        {isError.joined_at && (
+          <span className="text-red-500">{isError.joined_at}</span>
         )}
-      </div>
-      <div className="flex flex-col m-1">
-        <label htmlFor="">Customer Name</label>
-        <input
-          type="text"
-          name="customer_name"
-          className={`border-1 my-1 px-2 py-1 rounded-sm w-full ${
-            isError.customer_name ? "border-red-500" : "border-black"
-          }`}
-          value={values.customer_name}
-          onChange={handleChange}
-        />
       </div>
     </div>
   );
 
   const footer = (
     <div className="flex justify-end px-4 pb-2 mb-3 space-x-4">
-      {title !== "Add New Sales" && (
+      {title !== "Add New Employee" && (
         <button
           className="border py-2 px-1 bg-red-200 w-1/2 md:w-2/5 rounded-sm hover:bg-red-300 active:bg-red-400 cursor-pointer"
-          onClick={() => handleDeleteItem(values.salesNum)}
+          onClick={() => handleDeleteItem(values.employeeId)}
         >
           Delete
         </button>
@@ -149,7 +171,7 @@ const SalesComponent = () => {
         className="border py-2 px-1 bg-blue-200 w-1/2 md:w-2/5 rounded-sm hover:bg-blue-300 active:bg-blue-400 cursor-pointer"
         onClick={handleSubmit(handleSubmitForm)}
       >
-        {title === "Add New Sales" ? "Add" : "Update"}
+        {title === "Add New Employee" ? "Add" : "Update"}
       </button>
     </div>
   );
@@ -178,22 +200,19 @@ const SalesComponent = () => {
           <thead className="text-xs uppercase bg-violet-300">
             <tr>
               <th scope="col" className="px-6 py-3">
-                Sales No.
+                Employee ID
               </th>
               <th scope="col" className="px-6 py-3">
-                Item No.
+                First Name
               </th>
               <th scope="col" className="px-6 py-3">
-                Quantity Sold
+                Last Name
               </th>
               <th scope="col" className="px-6 py-3">
-                Total Price
+                Position
               </th>
               <th scope="col" className="px-6 py-3">
-                Sold At
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Customer Name
+                Status
               </th>
             </tr>
           </thead>
@@ -201,7 +220,7 @@ const SalesComponent = () => {
             {paginatedData.length ? (
               paginatedData.map((item, index) => (
                 <tr
-                  key={`${index}-${item.itemNum}`}
+                  key={`${index}-${item.employeeId}`}
                   className="odd:bg-white even:bg-violet-200 border-b cursor-pointer hover:odd:bg-gray-100 hover:even:bg-violet-300"
                   onDoubleClick={() => onEdit(item)}
                 >
@@ -209,20 +228,19 @@ const SalesComponent = () => {
                     scope="row"
                     className="px-6 py-4 font-medium whitespace-nowrap"
                   >
-                    {item.salesNum}
+                    {item.employeeId}
                   </th>
-                  <td className="px-6 py-4">{item.itemNum}</td>
-                  <td className="px-6 py-4">{item.quantity_sold}</td>
-                  <td className="px-6 py-4">{item.total_price}</td>
+                  <td className="px-6 py-4">{item.last_name}</td>
+                  <td className="px-6 py-4">{item.first_name}</td>
+                  <td className="px-6 py-4">{item.position}</td>
                   <td className="px-6 py-4">
-                    {item.sold_at.split("T")[0]} {item.sold_at.split("T")[1]}
+                    {item.status === "AC" ? "Active" : "Resigned"}
                   </td>
-                  <td className="px-6 py-4">{item.customer_name}</td>
                 </tr>
               ))
             ) : (
               <tr className="odd:bg-white even:bg-violet-200 border-b">
-                <td className="px-6 py-4 text-center" colSpan={6}>
+                <td className="px-6 py-4 text-center" colSpan={5}>
                   No data available.
                 </td>
               </tr>
@@ -243,8 +261,8 @@ const SalesComponent = () => {
       {isOpenModal && (
         <ModalComponent
           title={title}
-          footer={footer}
           children={children}
+          footer={footer}
           handleCloseModal={handleCloseModal}
         />
       )}
@@ -252,4 +270,4 @@ const SalesComponent = () => {
   );
 };
 
-export default SalesComponent;
+export default EmployeesComponent;

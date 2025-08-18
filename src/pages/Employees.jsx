@@ -1,7 +1,12 @@
-import React from "react";
+import { EmployeesContextProvider } from "../context/EmployeesContext";
+import EmployeesComponent from "../features/Employees/EmployeesComponent";
 
 const Employees = () => {
-  return <div>This is Employees</div>;
+  return (
+    <EmployeesContextProvider>
+      <EmployeesComponent />
+    </EmployeesContextProvider>
+  );
 };
 
 export default Employees;

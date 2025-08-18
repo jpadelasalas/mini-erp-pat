@@ -130,14 +130,14 @@ const InventoryComponent = () => {
     <div className="flex justify-end px-4 pb-2 mb-3 space-x-4">
       {title !== "Add New Inventory" && (
         <button
-          className="border py-2 px-1 bg-red-200 w-1/2 md:w-2/5 rounded-sm hover:bg-red-300 active:bg-red-400"
+          className="border py-2 px-1 bg-red-200 w-1/2 md:w-2/5 rounded-sm hover:bg-red-300 active:bg-red-400 cursor-pointer"
           onClick={() => handleDeleteItem(values.itemNum)}
         >
           Delete
         </button>
       )}
       <button
-        className="border py-2 px-1 bg-blue-200 w-1/2 md:w-2/5 rounded-sm hover:bg-blue-300 active:bg-blue-400"
+        className="border py-2 px-1 bg-blue-200 w-1/2 md:w-2/5 rounded-sm hover:bg-blue-300 active:bg-blue-400 cursor-pointer"
         onClick={handleSubmit(handleSubmitForm)}
       >
         {title === "Add New Inventory" ? "Add" : "Update"}
@@ -157,7 +157,7 @@ const InventoryComponent = () => {
         />
         <div className="text-end mx-5">
           <button
-            className="p-2 w-1/2 sm:w-3/4 rounded-md bg-blue-300 active:border-1 active:bg-blue-400"
+            className="p-2 w-1/2 sm:w-3/4 rounded-md bg-violet-400 active:border-1 hover:bg-violet-500 active:bg-violet-300 cursor-pointer"
             onClick={handleOpenModal}
           >
             Add New
@@ -201,7 +201,7 @@ const InventoryComponent = () => {
                 <tr
                   key={`${index}-${item.itemNum}`}
                   className="odd:bg-white even:bg-violet-200 border-b cursor-pointer hover:odd:bg-gray-100 hover:even:bg-violet-300"
-                  onDoubleClick={() => onEdit(item.itemNum)}
+                  onDoubleClick={() => onEdit(item)}
                 >
                   <th
                     scope="row"

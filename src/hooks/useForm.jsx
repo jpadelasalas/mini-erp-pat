@@ -9,6 +9,12 @@ const funcDispatch = (state, action) => {
       };
     case "RESET_FORM":
       return action.payload;
+    case "MERGE_FORM":
+      return {
+        ...state,
+        ...action.payload,
+      };
+
     default:
       return state;
   }
@@ -38,6 +44,11 @@ const useForm = (initialValues = null, validate) => {
     setIsError({});
   }, [initialValues]);
 
+  const mergeForm = useCallback((vals) => {
+    dispatch({ type: "MERGE_FORM", payload: vals });
+    setIsError({});
+  }, []);
+
   const handleSubmit = useCallback(
     (callback) => (e) => {
       e.preventDefault();
@@ -59,6 +70,7 @@ const useForm = (initialValues = null, validate) => {
     isError,
     handleSubmit,
     dispatchForm,
+    mergeForm,
     resetForm,
   };
 };
