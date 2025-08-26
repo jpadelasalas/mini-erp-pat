@@ -24,8 +24,8 @@ const menuItems = [
     icon: "Badge",
   },
   {
-    label: "Settings",
-    route: "/settings",
+    label: "Setup",
+    route: "/setup",
     icon: "Settings",
   },
 ];
