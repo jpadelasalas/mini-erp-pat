@@ -1,7 +1,12 @@
-import React from "react";
+import { DashboardContextProvider } from "../context/DashboardContext";
+import DashboardComponent from "../features/Dashboard/DashboardComponent";
 
 const Dashboard = () => {
-  return <div>This is Dashboard</div>;
+  return (
+    <DashboardContextProvider>
+      <DashboardComponent />
+    </DashboardContextProvider>
+  );
 };
 
 export default Dashboard;

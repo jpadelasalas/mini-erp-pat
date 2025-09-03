@@ -136,7 +136,7 @@ export const SalesContextProvider = ({ children }) => {
     const sales = getLocalData("Sales");
     const inventory = getLocalData("Inventory");
 
-    if (inventory) {
+    if (inventory && inventory[userId]) {
       const items = inventory[userId].filter((item) => item.quantity > 0);
       setItemList(items);
     }
@@ -236,7 +236,7 @@ export const SalesContextProvider = ({ children }) => {
       (item) => item.itemNum === vals.itemNum
     ).quantity;
 
-    if (quantity < vals.quantity_sold) {
+    if (Number(quantity) < Number(vals.quantity_sold)) {
       Swal.fire({
         icon: "error",
         title: "Quantity Sold is greater than Inventory Quantity",

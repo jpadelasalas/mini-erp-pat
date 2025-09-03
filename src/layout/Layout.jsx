@@ -58,9 +58,11 @@ const Layout = () => {
             {titlePage}
           </h3>
           <div
-            className={`my-5 mx-0 md:mx-2 ${
-              titlePage === "Setup" ? "p-0" : "p-2"
-            }  border-2 overflow-x-hidden  border-gray-900 rounded-lg flex-grow-1 bg-violet-50`}
+            className={`my-5 mx-0 md:mx-2 p-2 ${
+              titlePage !== "Dashboard"
+                ? "border-2 border-gray-900 rounded-lg bg-violet-50"
+                : "border-0"
+            }  overflow-x-hidden flex-grow-1 `}
           >
             <Outlet />
           </div>

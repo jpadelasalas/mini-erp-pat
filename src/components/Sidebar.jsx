@@ -23,11 +23,6 @@ const menuItems = [
     route: "/employees",
     icon: "Badge",
   },
-  {
-    label: "Setup",
-    route: "/setup",
-    icon: "Settings",
-  },
 ];
 
 const Sidebar = ({ setTitlePage, setIsOpenSidebar, isOpenSidebar }) => {

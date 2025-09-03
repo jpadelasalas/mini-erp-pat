@@ -227,16 +227,16 @@ const InventoryComponent = () => {
             )}
           </tbody>
         </table>
-      </div>
-      <div className="flex justify-end mt-5">
-        <TablePagination
-          component="div"
-          count={totalData}
-          page={currentPage}
-          onPageChange={handlePageChange}
-          rowsPerPage={dataPerPage}
-          onRowsPerPageChange={handleRowsPerPageChange}
-        />
+        <div className="flex justify-end mt-5">
+          <TablePagination
+            component="div"
+            count={totalData}
+            page={currentPage}
+            onPageChange={handlePageChange}
+            rowsPerPage={dataPerPage}
+            onRowsPerPageChange={handleRowsPerPageChange}
+          />
+        </div>
       </div>
       {isOpenModal && (
         <ModalComponent

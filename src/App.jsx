@@ -17,7 +17,6 @@ const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
 const Inventory = lazy(() => import("./pages/Inventory.jsx"));
 const Sales = lazy(() => import("./pages/Sales.jsx"));
 const Employees = lazy(() => import("./pages/Employees.jsx"));
-const Setup = lazy(() => import("./pages/Setup.jsx"));
 
 function App() {
   const { user } = useAuth();
@@ -48,7 +47,6 @@ function App() {
               <Route path="inventory" element={<Inventory />} />
               <Route path="sales" element={<Sales />} />
               <Route path="employees" element={<Employees />} />
-              <Route path="setup" element={<Setup />} />
             </Route>
           </Route>
         </Routes>
