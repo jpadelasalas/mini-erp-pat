@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer, useState } from "react";
+import { useCallback, useReducer, useState } from "react";
 
 const funcDispatch = (state, action) => {
   switch (action.type) {
