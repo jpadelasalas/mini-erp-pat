@@ -29,10 +29,10 @@ const useForm = (initialValues = null, validate) => {
     [validate]
   );
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     dispatch({ type: "ADD_INPUT", name, value });
-  };
+  }, []);
 
   const dispatchForm = useCallback((vals) => {
     dispatch({ type: "RESET_FORM", payload: vals });
