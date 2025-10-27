@@ -1,11 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContextSelector } from "use-context-selector";
 import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
@@ -194,36 +188,77 @@ export const InventoryContextProvider = ({ children }) => {
     [setData]
   );
 
+  const modalData = useMemo(
+    () => ({
+      isOpenModal,
+      handleOpenModal,
+      handleCloseModal,
+      title,
+      onEdit,
+    }),
+    [isOpenModal, handleOpenModal, handleCloseModal, title, onEdit]
+  );
+
+  const parentData = useMemo(
+    () => ({
+      search,
+      handleSearch,
+      currentPage,
+      dataPerPage,
+      totalData,
+      handlePageChange,
+      handleRowsPerPageChange,
+      paginatedData,
+    }),
+    [
+      search,
+      handleSearch,
+      currentPage,
+      dataPerPage,
+      totalData,
+      handlePageChange,
+      handleRowsPerPageChange,
+      paginatedData,
+    ]
+  );
+
+  const formData = useMemo(
+    () => ({
+      values,
+      handleChange,
+      isError,
+      handleSubmit,
+      handleSubmitForm,
+      handleDeleteItem,
+    }),
+    [
+      values,
+      handleChange,
+      isError,
+      handleSubmit,
+      handleSubmitForm,
+      handleDeleteItem,
+    ]
+  );
+
+  const value = useMemo(
+    () => ({
+      modalData,
+      formData,
+      parentData,
+    }),
+    [modalData, formData, parentData]
+  );
   return (
-    <InventoryContext.Provider
-      value={{
-        search,
-        handleSearch,
-        isOpenModal,
-        setIsOpenModal,
-        handleOpenModal,
-        handleCloseModal,
-        values,
-        handleChange,
-        isError,
-        onEdit,
-        handleSubmit,
-        handleSubmitForm,
-        handleDeleteItem,
-        dispatchForm,
-        title,
-        currentPage,
-        dataPerPage,
-        totalPages,
-        totalData,
-        handlePageChange,
-        handleRowsPerPageChange,
-        paginatedData,
-      }}
-    >
+    <InventoryContext.Provider value={value}>
       {children}
     </InventoryContext.Provider>
   );
 };
 
-export const useInventory = () => useContext(InventoryContext);
+export const useInventoryModalData = () =>
+  useContextSelector(InventoryContext, (ctx) => ctx.modalData);
+export const useInventoryFormData = () =>
+  useContextSelector(InventoryContext, (ctx) => ctx.formData);
+export const useInventoryParentData = () =>
+  useContextSelector(InventoryContext, (ctx) => ctx.parentData);

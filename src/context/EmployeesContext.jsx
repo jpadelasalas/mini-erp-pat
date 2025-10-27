@@ -3,12 +3,14 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
+import { useContextSelector } from "use-context-selector";
 
 const EmployeesContext = createContext();
 
@@ -194,34 +196,79 @@ export const EmployeesContextProvider = ({ children }) => {
     [setData]
   );
 
+  const modalData = useMemo(
+    () => ({
+      isOpenModal,
+      title,
+      handleCloseModal,
+      handleOpenModal,
+      onEdit,
+    }),
+
+    [isOpenModal, title, handleCloseModal, handleOpenModal, onEdit]
+  );
+
+  const parentData = useMemo(
+    () => ({
+      search,
+      paginatedData,
+      currentPage,
+      dataPerPage,
+      totalPages,
+      totalData,
+      handleSearch,
+      handlePageChange,
+      handleRowsPerPageChange,
+    }),
+    [
+      search,
+      paginatedData,
+      currentPage,
+      dataPerPage,
+      totalPages,
+      totalData,
+      handleSearch,
+      handlePageChange,
+      handleRowsPerPageChange,
+    ]
+  );
+
+  const formData = useMemo(
+    () => ({
+      values,
+      handleChange,
+      isError,
+      handleSubmitForm,
+      handleSubmit,
+      handleDeleteItem,
+    }),
+    [
+      values,
+      handleChange,
+      isError,
+      handleSubmitForm,
+      handleSubmit,
+      handleDeleteItem,
+    ]
+  );
+  const value = useMemo(
+    () => ({
+      modalData,
+      parentData,
+      formData,
+    }),
+    [modalData, parentData, formData]
+  );
   return (
-    <EmployeesContext.Provider
-      value={{
-        search,
-        paginatedData,
-        currentPage,
-        dataPerPage,
-        totalPages,
-        totalData,
-        handleSearch,
-        handlePageChange,
-        handleRowsPerPageChange,
-        isOpenModal,
-        title,
-        handleCloseModal,
-        values,
-        handleChange,
-        isError,
-        handleSubmitForm,
-        handleSubmit,
-        handleOpenModal,
-        onEdit,
-        handleDeleteItem,
-      }}
-    >
+    <EmployeesContext.Provider value={value}>
       {children}
     </EmployeesContext.Provider>
   );
 };
 
-export const useEmployees = () => useContext(EmployeesContext);
+export const useEmployeesModalData = () =>
+  useContextSelector(EmployeesContext, (ctx) => ctx.modalData);
+export const useEmployeesParentData = () =>
+  useContextSelector(EmployeesContext, (ctx) => ctx.parentData);
+export const useEmployeesFormData = () =>
+  useContextSelector(EmployeesContext, (ctx) => ctx.formData);
