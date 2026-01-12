@@ -115,16 +115,6 @@ export const DashboardContextProvider = ({ children }) => {
           getSalesByMonthYear(sales, index, currentYear) || 0,
       }));
 
-      months.map((month, index) => {
-        console.log(
-          month,
-          getSalesByMonthYear(sales, index, currentYear),
-          getSalesByMonthYear(sales, index, currentYear - 1),
-          index,
-          currentYear
-        );
-      });
-
       return data;
     },
     [getSalesByMonthYear, currentYear]

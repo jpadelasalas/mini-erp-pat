@@ -4,7 +4,11 @@ import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
 
-const InventoryContext = createContext();
+const InventoryContext = createContext({
+  modalData: null,
+  formData: null,
+  parentData: null,
+});
 
 const validation = (vals) => {
   const errors = {};
