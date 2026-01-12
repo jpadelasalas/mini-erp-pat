@@ -1,9 +1,9 @@
 import { TablePagination } from "@mui/material";
 import InventoryModal from "./InventoryModal";
 import {
-  useSalesModalData,
-  useSalesParentData,
-} from "../../context/SalesContext";
+  useInventoryModalData,
+  useInventoryParentData,
+} from "../../context/InventoryContext";
 
 const InventoryComponent = () => {
   const {
@@ -15,9 +15,10 @@ const InventoryComponent = () => {
     handlePageChange,
     handleRowsPerPageChange,
     paginatedData,
-  } = useSalesParentData();
+  } = useInventoryParentData() || {};
   const { isOpenModal, handleOpenModal, handleCloseModal, title, onEdit } =
-    useSalesModalData();
+    useInventoryModalData() || {};
+
   return (
     <>
       <header className="grid grid-cols-1 sm:grid-cols-[8fr_4fr] mt-2 mb-4 max-sm:gap-10">
@@ -69,8 +70,8 @@ const InventoryComponent = () => {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.length ? (
-              paginatedData.map((item, index) => (
+            {paginatedData?.length ? (
+              paginatedData?.map((item, index) => (
                 <tr
                   key={`${index}-${item.itemNum}`}
                   className="odd:bg-white even:bg-violet-200 border-b cursor-pointer hover:odd:bg-gray-100 hover:even:bg-violet-300"
