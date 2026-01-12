@@ -267,8 +267,8 @@ export const EmployeesContextProvider = ({ children }) => {
 };
 
 export const useEmployeesModalData = () =>
-  useContextSelector(EmployeesContext, (ctx) => ctx.modalData);
+  useContextSelector(EmployeesContext, (ctx) => ctx?.modalData);
 export const useEmployeesParentData = () =>
-  useContextSelector(EmployeesContext, (ctx) => ctx.parentData);
+  useContextSelector(EmployeesContext, (ctx) => ctx?.parentData);
 export const useEmployeesFormData = () =>
-  useContextSelector(EmployeesContext, (ctx) => ctx.formData);
+  useContextSelector(EmployeesContext, (ctx) => ctx?.formData);

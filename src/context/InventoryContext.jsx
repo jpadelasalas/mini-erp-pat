@@ -257,8 +257,8 @@ export const InventoryContextProvider = ({ children }) => {
 };
 
 export const useInventoryModalData = () =>
-  useContextSelector(InventoryContext, (ctx) => ctx.modalData);
+  useContextSelector(InventoryContext, (ctx) => ctx?.modalData);
 export const useInventoryFormData = () =>
-  useContextSelector(InventoryContext, (ctx) => ctx.formData);
+  useContextSelector(InventoryContext, (ctx) => ctx?.formData);
 export const useInventoryParentData = () =>
-  useContextSelector(InventoryContext, (ctx) => ctx.parentData);
+  useContextSelector(InventoryContext, (ctx) => ctx?.parentData);

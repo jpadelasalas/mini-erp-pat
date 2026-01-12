@@ -444,8 +444,8 @@ export const SalesContextProvider = ({ children }) => {
 };
 
 export const useSalesModalData = () =>
-  useContextSelector(SalesContext, (ctx) => ctx.modalData);
+  useContextSelector(SalesContext, (ctx) => ctx?.modalData);
 export const useSalesParentData = () =>
-  useContextSelector(SalesContext, (ctx) => ctx.parentData);
+  useContextSelector(SalesContext, (ctx) => ctx?.parentData);
 export const useSalesFormData = () =>
-  useContextSelector(SalesContext, (ctx) => ctx.formData);
+  useContextSelector(SalesContext, (ctx) => ctx?.formData);
