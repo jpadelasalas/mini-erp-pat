@@ -1,22 +1,10 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
-import { useContextSelector } from "use-context-selector";
+import { createContext, useContextSelector } from "use-context-selector";
 
-const EmployeesContext = createContext({
-  modalData: null,
-  parentData: null,
-  formData: null,
-});
+const EmployeesContext = createContext();
 
 const validation = (vals) => {
   let errors = {};
@@ -53,7 +41,7 @@ export const EmployeesContextProvider = ({ children }) => {
     handleRowsPerPageChange,
     handleSearch,
     setData,
-  } = usePaginationWithSearch();
+  } = usePaginationWithSearch() || {};
 
   const getLocalData = useCallback((key, defaultVal = {}) => {
     try {
