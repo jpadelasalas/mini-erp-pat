@@ -1,21 +1,24 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ChangeEvent } from "react";
 import useDebounce from "../hooks/useDebounce";
 
-const usePaginationWithSearch = () => {
+const usePaginationWithSearch = <T extends object>() => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 700);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<T[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [dataPerPage, setDataPerPage] = useState(10);
 
-  const handlePageChange = useCallback((event, page) => {
+  const handlePageChange = useCallback((_event: unknown, page: number) => {
     setCurrentPage(page);
   }, []);
 
-  const handleRowsPerPageChange = useCallback((event) => {
-    setDataPerPage(parseInt(event.target.value, 10));
-    setCurrentPage(0);
-  }, []);
+  const handleRowsPerPageChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setDataPerPage(parseInt(event.target.value, 10));
+      setCurrentPage(0);
+    },
+    []
+  );
 
   const filteredData = useMemo(() => {
     if (debouncedSearch.trim() === "") return data;
@@ -37,7 +40,7 @@ const usePaginationWithSearch = () => {
     return Math.ceil(totalData / dataPerPage);
   }, [totalData, dataPerPage]);
 
-  const handleSearch = useCallback((e) => {
+  const handleSearch = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
     setCurrentPage(0);
   }, []);

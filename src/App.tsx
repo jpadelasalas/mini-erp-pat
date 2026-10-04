@@ -5,18 +5,18 @@ import {
   Navigate,
 } from "react-router-dom";
 import { lazy, Suspense } from "react";
-import { useAuth } from "./context/AuthContext.jsx";
-import Loading from "./components/Loading.jsx";
+import { useAuth } from "./context/AuthContext";
+import Loading from "./components/Loading";
 
-const PublicRoute = lazy(() => import("./components/PublicRoute.jsx"));
-const Login = lazy(() => import("./pages/Login.jsx"));
+const PublicRoute = lazy(() => import("./components/PublicRoute"));
+const Login = lazy(() => import("./pages/Login"));
 
-const ProtectedRoute = lazy(() => import("./components/ProtectedRoute.jsx"));
-const Layout = lazy(() => import("./layout/Layout.jsx"));
-const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
-const Inventory = lazy(() => import("./pages/Inventory.jsx"));
-const Sales = lazy(() => import("./pages/Sales.jsx"));
-const Employees = lazy(() => import("./pages/Employees.jsx"));
+const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
+const Layout = lazy(() => import("./layout/Layout"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const Sales = lazy(() => import("./pages/Sales"));
+const Employees = lazy(() => import("./pages/Employees"));
 
 function App() {
   const { user } = useAuth();

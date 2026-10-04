@@ -1,13 +1,37 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
 import { createContext, useContextSelector } from "use-context-selector";
+import type { Employee, FormErrors } from "../types";
+import {
+  bumpDocNo,
+  formatDocNo,
+  getDocNo,
+  getLocalData,
+  getUserId,
+  type PerUser,
+} from "../lib/storage";
 
-const EmployeesContext = createContext();
+const EMPTY_EMPLOYEE: Employee = {
+  employeeId: "",
+  last_name: "",
+  first_name: "",
+  position: "",
+  email: "",
+  status: "",
+  joined_at: "",
+};
 
-const validation = (vals) => {
-  let errors = {};
+const validation = (vals: Employee) => {
+  const errors: FormErrors<Employee> = {};
   if (!vals.last_name) errors.last_name = "Last name is required";
   if (!vals.first_name) errors.first_name = "First name is required";
   if (!vals.position) errors.position = "Position is required";
@@ -18,14 +42,14 @@ const validation = (vals) => {
   return errors;
 };
 
-export const EmployeesContextProvider = ({ children }) => {
+const useEmployeesState = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const rendered = useRef(false);
 
   const { values, handleChange, isError, handleSubmit, dispatchForm } = useForm(
-    {},
+    EMPTY_EMPLOYEE,
     validation
   );
 
@@ -41,51 +65,15 @@ export const EmployeesContextProvider = ({ children }) => {
     handleRowsPerPageChange,
     handleSearch,
     setData,
-  } = usePaginationWithSearch() || {};
-
-  const getLocalData = useCallback((key, defaultVal = {}) => {
-    try {
-      return JSON.parse(
-        localStorage.getItem(key) || JSON.stringify(defaultVal)
-      );
-    } catch {
-      return defaultVal;
-    }
-  }, []);
-
-  const getUserId = () => {
-    try {
-      const user = JSON.parse(sessionStorage.getItem("user") || "{}");
-      return user?.id || null;
-    } catch {
-      return null;
-    }
-  };
-
-  const getDocNo = useCallback(
-    (userId) => {
-      try {
-        const docnoData = getLocalData("docno");
-        return docnoData?.[userId]?.employees || null;
-      } catch {
-        return null;
-      }
-    },
-    [getLocalData]
-  );
+  } = usePaginationWithSearch<Employee>();
 
   // Initialize
   useEffect(() => {
     const userId = getUserId();
-    if (!userId) return;
+    if (!userId || !getDocNo(userId, "employees")) return;
 
-    const docNo = getDocNo(userId);
-    if (!docNo) return;
-
-    const items = getLocalData("Employees");
-
-    setData(items[userId] || []);
-  }, [setData, getLocalData, getDocNo]);
+    setData(getLocalData<PerUser<Employee>>("Employees")[userId] || []);
+  }, [setData]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -96,39 +84,27 @@ export const EmployeesContextProvider = ({ children }) => {
     const userId = getUserId();
     if (!userId) return;
 
-    const items = getLocalData("Employees");
+    const items = getLocalData<PerUser<Employee>>("Employees");
     items[userId] = employeeList;
     localStorage.setItem("Employees", JSON.stringify(items));
-  }, [employeeList, getLocalData]);
+  }, [employeeList]);
 
   const handleOpenModal = useCallback(() => {
-    const userId = getUserId();
-    const docNo = getDocNo(userId);
+    const docNo = getDocNo(getUserId(), "employees");
     if (!docNo) return;
-
-    const newItem = {
-      employeeId:
-        docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
-      last_name: "",
-      first_name: "",
-      position: "",
-      email: "",
-      status: "",
-      joined_at: "",
-    };
 
     setIsEditing(false);
     setTitle("Add New Employee");
-    dispatchForm(newItem);
+    dispatchForm({ ...EMPTY_EMPLOYEE, employeeId: formatDocNo(docNo) });
     setIsOpenModal(true);
-  }, [dispatchForm, getDocNo]);
+  }, [dispatchForm]);
 
   const handleCloseModal = useCallback(() => {
     setIsOpenModal(false);
   }, []);
 
   const onEdit = useCallback(
-    (item) => {
+    (item: Employee) => {
       setIsEditing(true);
       setTitle("Update Employee");
       dispatchForm(item);
@@ -137,14 +113,10 @@ export const EmployeesContextProvider = ({ children }) => {
     [dispatchForm]
   );
 
-  const handleAddInventory = (vals) => {
+  const handleAddEmployee = (vals: Employee) => {
     setData((prev) => [...prev, vals]);
 
-    const userId = getUserId();
-    const docnoData = JSON.parse(localStorage.getItem("docno") || "{}");
-    if (docnoData?.[userId]?.employees) {
-      docnoData[userId].employees.docnum += 1;
-      localStorage.setItem("docno", JSON.stringify(docnoData));
+    if (bumpDocNo(getUserId(), "employees")) {
       Swal.fire({ icon: "success", title: "Added Successfully!" }).then(
         (res) => {
           if (res.isConfirmed) handleCloseModal();
@@ -153,9 +125,9 @@ export const EmployeesContextProvider = ({ children }) => {
     }
   };
 
-  const handleUpdateInventory = (vals) => {
+  const handleUpdateEmployee = (vals: Employee) => {
     setData((prev) =>
-      prev.map((item) => (item.itemNum === vals.itemNum ? vals : item))
+      prev.map((item) => (item.employeeId === vals.employeeId ? vals : item))
     );
     Swal.fire({ icon: "success", title: "Updated Successfully!" }).then(
       (res) => {
@@ -164,14 +136,13 @@ export const EmployeesContextProvider = ({ children }) => {
     );
   };
 
-  const handleSubmitForm = (formValues) => {
-    isEditing
-      ? handleUpdateInventory(formValues)
-      : handleAddInventory(formValues);
+  const handleSubmitForm = (formValues: Employee) => {
+    if (isEditing) handleUpdateEmployee(formValues);
+    else handleAddEmployee(formValues);
   };
 
   const handleDeleteItem = useCallback(
-    (id) => {
+    (id: string) => {
       Swal.fire({
         title: "Are you sure?",
         text: "This action cannot be undone!",
@@ -191,13 +162,14 @@ export const EmployeesContextProvider = ({ children }) => {
   const modalData = useMemo(
     () => ({
       isOpenModal,
+      isEditing,
       title,
       handleCloseModal,
       handleOpenModal,
       onEdit,
     }),
 
-    [isOpenModal, title, handleCloseModal, handleOpenModal, onEdit]
+    [isOpenModal, isEditing, title, handleCloseModal, handleOpenModal, onEdit]
   );
 
   const parentData = useMemo(
@@ -225,42 +197,32 @@ export const EmployeesContextProvider = ({ children }) => {
     ]
   );
 
-  const formData = useMemo(
-    () => ({
-      values,
-      handleChange,
-      isError,
-      handleSubmitForm,
-      handleSubmit,
-      handleDeleteItem,
-    }),
-    [
-      values,
-      handleChange,
-      isError,
-      handleSubmitForm,
-      handleSubmit,
-      handleDeleteItem,
-    ]
-  );
-  const value = useMemo(
-    () => ({
-      modalData,
-      parentData,
-      formData,
-    }),
-    [modalData, parentData, formData]
-  );
-  return (
-    <EmployeesContext.Provider value={value}>
-      {children}
-    </EmployeesContext.Provider>
-  );
+  const formData = {
+    values,
+    handleChange,
+    isError,
+    handleSubmitForm,
+    handleSubmit,
+    handleDeleteItem,
+  };
+
+  return { modalData, parentData, formData };
 };
 
+type EmployeesValue = ReturnType<typeof useEmployeesState>;
+
+const EmployeesContext = createContext<EmployeesValue | null>(null);
+
+export const EmployeesContextProvider = ({ children }: { children: ReactNode }) => (
+  <EmployeesContext.Provider value={useEmployeesState()}>
+    {children}
+  </EmployeesContext.Provider>
+);
+
+/* eslint-disable react-refresh/only-export-components */
 export const useEmployeesModalData = () =>
-  useContextSelector(EmployeesContext, (ctx) => ctx?.modalData);
+  useContextSelector(EmployeesContext, (ctx) => ctx!.modalData);
 export const useEmployeesParentData = () =>
-  useContextSelector(EmployeesContext, (ctx) => ctx?.parentData);
+  useContextSelector(EmployeesContext, (ctx) => ctx!.parentData);
 export const useEmployeesFormData = () =>
-  useContextSelector(EmployeesContext, (ctx) => ctx?.formData);
+  useContextSelector(EmployeesContext, (ctx) => ctx!.formData);

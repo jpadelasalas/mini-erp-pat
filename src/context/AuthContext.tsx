@@ -1,21 +1,35 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
 import bcrypt from "bcryptjs";
+import type { User } from "../types";
+import { getLocalData } from "../lib/storage";
 
-const AuthContext = createContext();
+export type Credentials = { username: string; password: string };
+type StoredUser = User & { password: string };
 
-export const AuthContextProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
+type AuthValue = {
+  user: User | null;
+  login: (creds: Credentials) => boolean;
+  register: (creds: Credentials) => boolean;
+  logout: () => void;
+};
+
+const AuthContext = createContext<AuthValue | null>(null);
+
+export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(() => {
     const stored = sessionStorage.getItem("user");
 
     return stored ? JSON.parse(stored) : null;
   });
 
-  const login = useCallback(({ username, password }) => {
-    const allUsers = JSON.parse(localStorage.getItem("users")) || [];
-
-    if (!allUsers) {
-      return false;
-    }
+  const login = useCallback(({ username, password }: Credentials) => {
+    const allUsers = getLocalData<StoredUser[]>("users", []);
 
     const userInfo = allUsers.find(
       (u) => u.username === username && bcrypt.compareSync(password, u.password)
@@ -33,8 +47,8 @@ export const AuthContextProvider = ({ children }) => {
     return true;
   }, []);
 
-  const register = useCallback(({ username, password }) => {
-    const allUsers = JSON.parse(localStorage.getItem("users")) || [];
+  const register = useCallback(({ username, password }: Credentials) => {
+    const allUsers = getLocalData<StoredUser[]>("users", []);
     const isExisting = allUsers.some((u) => u.username === username);
 
     if (isExisting) {
@@ -67,4 +81,9 @@ export const AuthContextProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthContextProvider");
+  return ctx;
+};

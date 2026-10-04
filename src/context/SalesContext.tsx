@@ -1,17 +1,37 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 import { createContext, useContextSelector } from "use-context-selector";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
 import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
+import type { FormErrors, InventoryItem, Sale } from "../types";
+import {
+  bumpDocNo,
+  formatDocNo,
+  getDocNo,
+  getLocalData,
+  getUserId,
+  type PerUser,
+} from "../lib/storage";
 
-const SalesContext = createContext({
-  modalData: null,
-  parentData: null,
-  formData: null,
-});
+const EMPTY_SALE: Sale = {
+  salesNum: "",
+  itemNum: "",
+  quantity_sold: "0",
+  total_price: "0",
+  sold_at: "",
+  customer_name: "",
+};
 
-const validation = (vals) => {
-  const errors = {};
+const validation = (vals: Sale) => {
+  const errors: FormErrors<Sale> = {};
   const qtySold = Number(vals.quantity_sold || 0);
   const totalPrice = Number(vals.total_price || 0);
 
@@ -26,9 +46,18 @@ const validation = (vals) => {
   return errors;
 };
 
-export const SalesContextProvider = ({ children }) => {
+const getInventory = () => getLocalData<PerUser<InventoryItem>>("Inventory");
+const inStock = (items: InventoryItem[] = []) =>
+  items.filter((item) => Number(item.quantity) > 0);
+const tooManyAlert = () =>
+  Swal.fire({
+    icon: "error",
+    title: "Quantity Sold is greater than Inventory Quantity",
+  });
+
+const useSalesState = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
-  const [itemList, setItemList] = useState([]);
+  const [itemList, setItemList] = useState<InventoryItem[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const rendered = useRef(false);
@@ -45,7 +74,7 @@ export const SalesContextProvider = ({ children }) => {
     handleRowsPerPageChange,
     handleSearch,
     setData,
-  } = usePaginationWithSearch();
+  } = usePaginationWithSearch<Sale>();
 
   const {
     values,
@@ -55,10 +84,10 @@ export const SalesContextProvider = ({ children }) => {
     dispatchForm,
     mergeForm,
     dispatch,
-  } = useForm({}, validation);
+  } = useForm(EMPTY_SALE, validation);
 
   const handleItemChange = useCallback(
-    (e) => {
+    (e: ChangeEvent<HTMLSelectElement>) => {
       mergeForm({
         quantity_sold: 0,
         total_price: 0,
@@ -69,16 +98,14 @@ export const SalesContextProvider = ({ children }) => {
   );
 
   const handleQuantitySoldChange = useCallback(
-    (e) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       if (values.itemNum) {
         handleChange(e);
-        const itemPrice = itemList.find(
-          (item) => item.itemNum === values.itemNum
-        );
+        const item = itemList.find((item) => item.itemNum === values.itemNum);
         dispatch({
           type: "ADD_INPUT",
           name: "total_price",
-          value: e.target.value * itemPrice.price,
+          value: Number(e.target.value) * Number(item?.price ?? 0),
         });
       } else {
         Swal.fire({
@@ -90,56 +117,13 @@ export const SalesContextProvider = ({ children }) => {
     [handleChange, dispatch, itemList, values.itemNum]
   );
 
-  const getLocalData = useCallback((key, defaultVal = {}) => {
-    try {
-      return JSON.parse(
-        localStorage.getItem(key) || JSON.stringify(defaultVal)
-      );
-    } catch {
-      return defaultVal;
-    }
-  }, []);
-
-  const getUserId = useCallback(() => {
-    try {
-      const user = JSON.parse(sessionStorage.getItem("user") || "{}");
-      return user?.id || null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const getDocNo = useCallback(
-    (userId) => {
-      try {
-        const docnoData = getLocalData("docno");
-        return docnoData?.[userId]?.sales || null;
-      } catch {
-        return null;
-      }
-    },
-    [getLocalData]
-  );
-
-  //   const today = () => new Date().toISOString().split("T")[0];
-
   useEffect(() => {
     const userId = getUserId();
-    if (!userId) return;
+    if (!userId || !getDocNo(userId, "sales")) return;
 
-    const docNo = getDocNo(userId);
-    if (!docNo) return;
-
-    const sales = getLocalData("Sales");
-    const inventory = getLocalData("Inventory");
-
-    if (inventory && inventory[userId]) {
-      const items = inventory[userId].filter((item) => item.quantity > 0);
-      setItemList(items);
-    }
-
-    setData(sales[userId] || []);
-  }, [setData, getLocalData, getDocNo, getUserId]);
+    setItemList(inStock(getInventory()[userId]));
+    setData(getLocalData<PerUser<Sale>>("Sales")[userId] || []);
+  }, [setData]);
 
   // Persist to localStorage
   useEffect(() => {
@@ -150,37 +134,22 @@ export const SalesContextProvider = ({ children }) => {
     const userId = getUserId();
     if (!userId) return;
 
-    const items = getLocalData("Sales");
+    const items = getLocalData<PerUser<Sale>>("Sales");
     items[userId] = salesList;
     localStorage.setItem("Sales", JSON.stringify(items));
-  }, [salesList, getLocalData, getUserId]);
+  }, [salesList]);
 
   const handleOpenModal = useCallback(() => {
     const userId = getUserId();
-    const docNo = getDocNo(userId);
-    const inventory = getLocalData("Inventory");
+    const docNo = getDocNo(userId, "sales");
+    if (!userId || !docNo) return;
 
-    if (!docNo) return;
-
-    const newItem = {
-      salesNum: docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
-      itemNum: "",
-      quantity_sold: "0",
-      total_price: "0",
-      sold_at: "",
-      customer_name: "",
-    };
-
-    if (inventory) {
-      const items = inventory[userId].filter((item) => item.quantity > 0);
-      setItemList(items);
-    }
-
+    setItemList(inStock(getInventory()[userId]));
     setIsEditing(false);
     setTitle("Add New Sales");
-    dispatchForm(newItem);
+    dispatchForm({ ...EMPTY_SALE, salesNum: formatDocNo(docNo) });
     setIsOpenModal(true);
-  }, [dispatchForm, getLocalData, getDocNo, getUserId]);
+  }, [dispatchForm]);
 
   const memoizedItems = useMemo(() => {
     return itemList.length ? (
@@ -199,66 +168,51 @@ export const SalesContextProvider = ({ children }) => {
   }, []);
 
   const onEdit = useCallback(
-    (item) => {
+    (sale: Sale) => {
       const userId = getUserId();
-      const inventory = getLocalData("Inventory");
-      const items = inventory[userId].filter((item) => item.quantity > 0);
-      const selectedItem = inventory[userId].find(
-        (inventoryItem) => inventoryItem.itemNum === item.itemNum
-      );
-      const exists = items.some(
-        (inventoryItem) => inventoryItem.itemNum === selectedItem.itemNum
-      );
+      const all = (userId && getInventory()[userId]) || [];
+      const items = inStock(all);
+      const selectedItem = all.find((i) => i.itemNum === sale.itemNum);
 
+      // keep the sold item selectable even when it is now out of stock
       setItemList(
-        exists
-          ? items.map((inventoryItem) =>
-              inventoryItem.itemNum === selectedItem.itemNum
-                ? selectedItem
-                : inventoryItem
-            )
+        !selectedItem || items.some((i) => i.itemNum === selectedItem.itemNum)
+          ? items
           : [...items, selectedItem]
       );
 
       setIsEditing(true);
       setTitle("Update Item");
-      dispatchForm(item);
+      dispatchForm(sale);
       setIsOpenModal(true);
     },
-    [dispatchForm, getLocalData, getUserId]
+    [dispatchForm]
   );
 
   const handleAddSales = useCallback(
-    (vals) => {
+    (vals: Sale) => {
       const quantity = itemList.find(
         (item) => item.itemNum === vals.itemNum
-      ).quantity;
+      )?.quantity;
 
-      if (Number(quantity) < Number(vals.quantity_sold)) {
-        Swal.fire({
-          icon: "error",
-          title: "Quantity Sold is greater than Inventory Quantity",
-        });
+      if (Number(quantity ?? 0) < Number(vals.quantity_sold)) {
+        tooManyAlert();
         return;
       }
       const userId = getUserId();
-      const docnoData = getLocalData("docno");
-      const inventory = getLocalData("Inventory");
+      if (!userId) return;
+      const inventory = getInventory();
 
-      inventory[userId] = inventory[userId].map((item) =>
+      inventory[userId] = (inventory[userId] ?? []).map((item) =>
         item.itemNum === vals.itemNum
-          ? { ...item, quantity: item.quantity - vals.quantity_sold }
+          ? { ...item, quantity: Number(item.quantity) - Number(vals.quantity_sold) }
           : item
       );
 
       localStorage.setItem("Inventory", JSON.stringify(inventory));
 
       setData((prev) => [...prev, vals]);
-
-      if (docnoData?.[userId]?.sales) {
-        docnoData[userId].sales.docnum += 1;
-        localStorage.setItem("docno", JSON.stringify(docnoData));
-      }
+      bumpDocNo(userId, "sales");
 
       Swal.fire({ icon: "success", title: "Added Successfully!" }).then(
         (res) => {
@@ -266,14 +220,17 @@ export const SalesContextProvider = ({ children }) => {
         }
       );
     },
-    [itemList, getUserId, getLocalData, setData, handleCloseModal]
+    [itemList, setData, handleCloseModal]
   );
 
   const handleUpdateSales = useCallback(
-    (vals) => {
+    (vals: Sale) => {
       const userId = getUserId();
-      const inventory = getLocalData("Inventory");
+      if (!userId) return;
+      const inventory = getInventory();
       const userInventory = inventory[userId] || [];
+      const stockOf = (itemNum: string) =>
+        Number(userInventory.find((i) => i.itemNum === itemNum)?.quantity ?? 0);
 
       setData((prev) => {
         const currentData = prev.find(
@@ -287,51 +244,33 @@ export const SalesContextProvider = ({ children }) => {
         if (vals.itemNum === currentData.itemNum) {
           // Same item, adjust stock by the difference
           const difference = quantitySold - oldQuantitySold;
-          const currentStock =
-            userInventory.find((i) => i.itemNum === vals.itemNum)?.quantity ??
-            0;
 
-          if (currentStock < difference) {
-            Swal.fire({
-              icon: "error",
-              title: "Quantity Sold is greater than Inventory Quantity",
-            });
+          if (stockOf(vals.itemNum) < difference) {
+            tooManyAlert();
             return prev;
           }
 
-          const updatedInventory = userInventory.map((item) =>
+          inventory[userId] = userInventory.map((item) =>
             item.itemNum === vals.itemNum
-              ? { ...item, quantity: item.quantity - difference }
+              ? { ...item, quantity: Number(item.quantity) - difference }
               : item
           );
-
-          inventory[userId] = updatedInventory;
-          localStorage.setItem("Inventory", JSON.stringify(inventory));
         } else {
           // Different item, restore old stock & deduct from new item
-          const newItemStock =
-            userInventory.find((i) => i.itemNum === vals.itemNum)?.quantity ??
-            0;
-
-          if (newItemStock < quantitySold) {
-            Swal.fire({
-              icon: "error",
-              title: "Quantity Sold is greater than Inventory Quantity",
-            });
+          if (stockOf(vals.itemNum) < quantitySold) {
+            tooManyAlert();
             return prev;
           }
 
-          const updatedInventory = userInventory.map((item) =>
+          inventory[userId] = userInventory.map((item) =>
             item.itemNum === currentData.itemNum
-              ? { ...item, quantity: item.quantity + oldQuantitySold }
+              ? { ...item, quantity: Number(item.quantity) + oldQuantitySold }
               : item.itemNum === vals.itemNum
-              ? { ...item, quantity: item.quantity - quantitySold }
+              ? { ...item, quantity: Number(item.quantity) - quantitySold }
               : item
           );
-
-          inventory[userId] = updatedInventory;
-          localStorage.setItem("Inventory", JSON.stringify(inventory));
         }
+        localStorage.setItem("Inventory", JSON.stringify(inventory));
 
         Swal.fire({ icon: "success", title: "Updated Successfully!" }).then(
           (res) => {
@@ -344,18 +283,19 @@ export const SalesContextProvider = ({ children }) => {
         );
       });
     },
-    [getUserId, getLocalData, handleCloseModal, setData]
+    [handleCloseModal, setData]
   );
 
   const handleSubmitForm = useCallback(
-    (formValues) => {
-      isEditing ? handleUpdateSales(formValues) : handleAddSales(formValues);
+    (formValues: Sale) => {
+      if (isEditing) handleUpdateSales(formValues);
+      else handleAddSales(formValues);
     },
     [isEditing, handleUpdateSales, handleAddSales]
   );
 
   const handleDeleteItem = useCallback(
-    (id) => {
+    (id: string) => {
       Swal.fire({
         title: "Are you sure?",
         text: "This action cannot be undone!",
@@ -375,12 +315,13 @@ export const SalesContextProvider = ({ children }) => {
   const modalData = useMemo(
     () => ({
       isOpenModal,
+      isEditing,
       title,
       handleOpenModal,
       handleCloseModal,
       onEdit,
     }),
-    [isOpenModal, title, handleOpenModal, handleCloseModal, onEdit]
+    [isOpenModal, isEditing, title, handleOpenModal, handleCloseModal, onEdit]
   );
 
   const parentData = useMemo(
@@ -433,23 +374,24 @@ export const SalesContextProvider = ({ children }) => {
     ]
   );
 
-  const value = useMemo(
-    () => ({
-      modalData,
-      parentData,
-      formData,
-    }),
+  return useMemo(
+    () => ({ modalData, parentData, formData }),
     [modalData, parentData, formData]
-  );
-
-  return (
-    <SalesContext.Provider value={value}>{children}</SalesContext.Provider>
   );
 };
 
+type SalesValue = ReturnType<typeof useSalesState>;
+
+const SalesContext = createContext<SalesValue | null>(null);
+
+export const SalesContextProvider = ({ children }: { children: ReactNode }) => (
+  <SalesContext.Provider value={useSalesState()}>{children}</SalesContext.Provider>
+);
+
+/* eslint-disable react-refresh/only-export-components */
 export const useSalesModalData = () =>
-  useContextSelector(SalesContext, (ctx) => ctx?.modalData);
+  useContextSelector(SalesContext, (ctx) => ctx!.modalData);
 export const useSalesParentData = () =>
-  useContextSelector(SalesContext, (ctx) => ctx?.parentData);
+  useContextSelector(SalesContext, (ctx) => ctx!.parentData);
 export const useSalesFormData = () =>
-  useContextSelector(SalesContext, (ctx) => ctx?.formData);
+  useContextSelector(SalesContext, (ctx) => ctx!.formData);
