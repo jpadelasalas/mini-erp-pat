@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-ink: #141416;
+  --color-ink-2: #232327;
+  --color-paper: #f4f3ee;
+  --color-sheet: #faf9f6;
+  --color-line: #e4e2da;
+  --color-muted: #5e5d57;
+  --color-faint: #74726a;
+  --color-side: #a3a29b;
+  --color-accent: #c8f04d;
+  --color-pos: #1a7f4b;
+  --color-pos-bg: #e2f3e8;
+  --color-neg: #b93d0c;
+  --color-neg-bg: #fbe8de;
+}
+
+body {
+  @apply bg-paper font-sans text-ink antialiased;
+}

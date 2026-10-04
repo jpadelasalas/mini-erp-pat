@@ -1,6 +1,12 @@
-import { useCallback, useReducer, useState } from "react";
+import { useCallback, useReducer, useState, type ChangeEvent } from "react";
+import type { FormErrors } from "../types";
 
-const funcDispatch = (state, action) => {
+export type FormAction<T> =
+  | { type: "ADD_INPUT"; name: string; value: unknown }
+  | { type: "RESET_FORM"; payload: T }
+  | { type: "MERGE_FORM"; payload: Partial<T> };
+
+const funcDispatch = <T,>(state: T, action: FormAction<T>): T => {
   switch (action.type) {
     case "ADD_INPUT":
       return {
@@ -20,21 +26,27 @@ const funcDispatch = (state, action) => {
   }
 };
 
-const useForm = (initialValues = null, validate) => {
-  const [values, dispatch] = useReducer(funcDispatch, initialValues);
-  const [isError, setIsError] = useState({});
+const useForm = <T extends object>(
+  initialValues: T,
+  validate?: (vals: T) => FormErrors<T>
+) => {
+  const [values, dispatch] = useReducer(funcDispatch<T>, initialValues);
+  const [isError, setIsError] = useState<FormErrors<T>>({});
 
   const validateForm = useCallback(
-    (vals) => (validate ? validate(vals) : {}),
+    (vals: T) => (validate ? validate(vals) : {}),
     [validate]
   );
 
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    dispatch({ type: "ADD_INPUT", name, value });
-  }, []);
+  const handleChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+      dispatch({ type: "ADD_INPUT", name, value });
+    },
+    []
+  );
 
-  const dispatchForm = useCallback((vals) => {
+  const dispatchForm = useCallback((vals: T) => {
     dispatch({ type: "RESET_FORM", payload: vals });
     setIsError({});
   }, []);
@@ -44,13 +56,13 @@ const useForm = (initialValues = null, validate) => {
     setIsError({});
   }, [initialValues]);
 
-  const mergeForm = useCallback((vals) => {
+  const mergeForm = useCallback((vals: Partial<T>) => {
     dispatch({ type: "MERGE_FORM", payload: vals });
     setIsError({});
   }, []);
 
   const handleSubmit = useCallback(
-    (callback) => (e) => {
+    (callback: (vals: T) => void) => (e: { preventDefault(): void }) => {
       e.preventDefault();
       const errors = validateForm(values);
       setIsError(errors);

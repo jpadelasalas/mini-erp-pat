@@ -1,32 +1,54 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createContext, useContextSelector } from "use-context-selector";
 import useForm from "../hooks/useForm";
 import Swal from "sweetalert2";
 import usePaginationWithSearch from "../hooks/usePaginationWithSearch";
+import type { FormErrors, InventoryItem } from "../types";
+import {
+  bumpDocNo,
+  formatDocNo,
+  getDocNo,
+  getLocalData,
+  getUserId,
+  type PerUser,
+} from "../lib/storage";
 
-const InventoryContext = createContext({
-  modalData: null,
-  formData: null,
-  parentData: null,
-});
+const EMPTY_ITEM: InventoryItem = {
+  itemNum: "",
+  name: "",
+  description: "",
+  category: "",
+  quantity: 1,
+  price: "",
+};
 
-const validation = (vals) => {
-  const errors = {};
+const validation = (vals: InventoryItem) => {
+  const errors: FormErrors<InventoryItem> = {};
 
   if (!vals.name) errors.name = "Name is required";
   if (!vals.category) errors.category = "Category is required";
-  if (vals.quantity <= -1) errors.quantity = "Quantity must be greater than -1";
+  if (Number(vals.quantity) <= -1)
+    errors.quantity = "Quantity must be greater than -1";
 
   if (!vals.price) {
     errors.price = "Price is required";
-  } else if (vals.price <= 0) {
+  } else if (Number(vals.price) <= 0) {
     errors.price = "Price must be greater than 0";
   }
 
   return errors;
 };
 
-export const InventoryContextProvider = ({ children }) => {
+const today = () => new Date().toISOString().split("T")[0];
+
+const useInventoryState = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
@@ -38,50 +60,24 @@ export const InventoryContextProvider = ({ children }) => {
     data: inventoryList,
     currentPage,
     dataPerPage,
-    totalPages,
     totalData,
     handleSearch,
     handlePageChange,
     handleRowsPerPageChange,
     setData,
-  } = usePaginationWithSearch();
+  } = usePaginationWithSearch<InventoryItem>();
 
   const { values, handleChange, isError, handleSubmit, dispatchForm } = useForm(
-    {},
+    EMPTY_ITEM,
     validation
   );
-
-  const getUserId = () => {
-    try {
-      const user = JSON.parse(sessionStorage.getItem("user") || "{}");
-      return user?.id || null;
-    } catch {
-      return null;
-    }
-  };
-
-  const getDocNo = (userId) => {
-    try {
-      const docnoData = JSON.parse(localStorage.getItem("docno") || "{}");
-      return docnoData?.[userId]?.inventory || null;
-    } catch {
-      return null;
-    }
-  };
-
-  const today = () => new Date().toISOString().split("T")[0];
 
   // Initialize
   useEffect(() => {
     const userId = getUserId();
-    if (!userId) return;
+    if (!userId || !getDocNo(userId, "inventory")) return;
 
-    const docNo = getDocNo(userId);
-    if (!docNo) return;
-
-    const items = JSON.parse(localStorage.getItem("Inventory") || "{}");
-
-    setData(items[userId] || []);
+    setData(getLocalData<PerUser<InventoryItem>>("Inventory")[userId] || []);
   }, [setData]);
 
   // Persist to localStorage
@@ -93,28 +89,18 @@ export const InventoryContextProvider = ({ children }) => {
     const userId = getUserId();
     if (!userId) return;
 
-    const items = JSON.parse(localStorage.getItem("Inventory") || "{}");
+    const items = getLocalData<PerUser<InventoryItem>>("Inventory");
     items[userId] = inventoryList;
     localStorage.setItem("Inventory", JSON.stringify(items));
   }, [inventoryList]);
 
   const handleOpenModal = useCallback(() => {
-    const userId = getUserId();
-    const docNo = getDocNo(userId);
+    const docNo = getDocNo(getUserId(), "inventory");
     if (!docNo) return;
-
-    const newItem = {
-      itemNum: docNo.prefix + String(docNo.docnum).padStart(docNo.length, "0"),
-      name: "",
-      description: "",
-      category: "",
-      quantity: 1,
-      price: "",
-    };
 
     setIsEditing(false);
     setTitle("Add New Inventory");
-    dispatchForm(newItem);
+    dispatchForm({ ...EMPTY_ITEM, itemNum: formatDocNo(docNo) });
     setIsOpenModal(true);
   }, [dispatchForm]);
 
@@ -123,7 +109,7 @@ export const InventoryContextProvider = ({ children }) => {
   }, []);
 
   const onEdit = useCallback(
-    (item) => {
+    (item: InventoryItem) => {
       setIsEditing(true);
       setTitle("Update Item");
       dispatchForm(item);
@@ -132,7 +118,7 @@ export const InventoryContextProvider = ({ children }) => {
     [dispatchForm]
   );
 
-  const handleAddInventory = (vals) => {
+  const handleAddInventory = (vals: InventoryItem) => {
     setData((prev) => [
       ...prev,
       {
@@ -142,11 +128,7 @@ export const InventoryContextProvider = ({ children }) => {
       },
     ]);
 
-    const userId = getUserId();
-    const docnoData = JSON.parse(localStorage.getItem("docno") || "{}");
-    if (docnoData?.[userId]?.inventory) {
-      docnoData[userId].inventory.docnum += 1;
-      localStorage.setItem("docno", JSON.stringify(docnoData));
+    if (bumpDocNo(getUserId(), "inventory")) {
       Swal.fire({ icon: "success", title: "Added Successfully!" }).then(
         (res) => {
           if (res.isConfirmed) handleCloseModal();
@@ -155,7 +137,7 @@ export const InventoryContextProvider = ({ children }) => {
     }
   };
 
-  const handleUpdateInventory = (vals) => {
+  const handleUpdateInventory = (vals: InventoryItem) => {
     setData((prev) =>
       prev.map((item) =>
         item.itemNum === vals.itemNum ? { ...vals, updated_at: today() } : item
@@ -168,14 +150,13 @@ export const InventoryContextProvider = ({ children }) => {
     );
   };
 
-  const handleSubmitForm = (formValues) => {
-    isEditing
-      ? handleUpdateInventory(formValues)
-      : handleAddInventory(formValues);
+  const handleSubmitForm = (formValues: InventoryItem) => {
+    if (isEditing) handleUpdateInventory(formValues);
+    else handleAddInventory(formValues);
   };
 
   const handleDeleteItem = useCallback(
-    (id) => {
+    (id: string) => {
       Swal.fire({
         title: "Are you sure?",
         text: "This action cannot be undone!",
@@ -195,12 +176,13 @@ export const InventoryContextProvider = ({ children }) => {
   const modalData = useMemo(
     () => ({
       isOpenModal,
+      isEditing,
       handleOpenModal,
       handleCloseModal,
       title,
       onEdit,
     }),
-    [isOpenModal, handleOpenModal, handleCloseModal, title, onEdit]
+    [isOpenModal, isEditing, handleOpenModal, handleCloseModal, title, onEdit]
   );
 
   const parentData = useMemo(
@@ -226,43 +208,32 @@ export const InventoryContextProvider = ({ children }) => {
     ]
   );
 
-  const formData = useMemo(
-    () => ({
-      values,
-      handleChange,
-      isError,
-      handleSubmit,
-      handleSubmitForm,
-      handleDeleteItem,
-    }),
-    [
-      values,
-      handleChange,
-      isError,
-      handleSubmit,
-      handleSubmitForm,
-      handleDeleteItem,
-    ]
-  );
+  const formData = {
+    values,
+    handleChange,
+    isError,
+    handleSubmit,
+    handleSubmitForm,
+    handleDeleteItem,
+  };
 
-  const value = useMemo(
-    () => ({
-      modalData,
-      formData,
-      parentData,
-    }),
-    [modalData, formData, parentData]
-  );
-  return (
-    <InventoryContext.Provider value={value}>
-      {children}
-    </InventoryContext.Provider>
-  );
+  return { modalData, formData, parentData };
 };
 
+type InventoryValue = ReturnType<typeof useInventoryState>;
+
+const InventoryContext = createContext<InventoryValue | null>(null);
+
+export const InventoryContextProvider = ({ children }: { children: ReactNode }) => (
+  <InventoryContext.Provider value={useInventoryState()}>
+    {children}
+  </InventoryContext.Provider>
+);
+
+/* eslint-disable react-refresh/only-export-components */
 export const useInventoryModalData = () =>
-  useContextSelector(InventoryContext, (ctx) => ctx?.modalData);
+  useContextSelector(InventoryContext, (ctx) => ctx!.modalData);
 export const useInventoryFormData = () =>
-  useContextSelector(InventoryContext, (ctx) => ctx?.formData);
+  useContextSelector(InventoryContext, (ctx) => ctx!.formData);
 export const useInventoryParentData = () =>
-  useContextSelector(InventoryContext, (ctx) => ctx?.parentData);
+  useContextSelector(InventoryContext, (ctx) => ctx!.parentData);
